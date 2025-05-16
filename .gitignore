@@ -1,0 +1,11 @@
+*.o
+*.d
+
+*.elf
+*.map
+*.hex
+
+*.DS_Store
+.cproject
+.project
+.settings/
