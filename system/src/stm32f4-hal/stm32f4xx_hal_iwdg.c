@@ -88,27 +88,27 @@
 #include "stm32f4xx_hal.h"
 
 /** @addtogroup STM32F4xx_HAL_Driver
-  * @{
-  */
+ * @{
+ */
 
 #ifdef HAL_IWDG_MODULE_ENABLED
 /** @addtogroup IWDG
-  * @brief IWDG HAL module driver.
-  * @{
-  */
+ * @brief IWDG HAL module driver.
+ * @{
+ */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /** @defgroup IWDG_Private_Defines IWDG Private Defines
-  * @{
-  */
+ * @{
+ */
 /* Status register need 5 RC LSI divided by prescaler clock to be updated. With
    higher prescaler (256), and according to LSI variation, we need to wait at
    least 6 cycles so 48 ms. */
-#define HAL_IWDG_DEFAULT_TIMEOUT            48u
+#define HAL_IWDG_DEFAULT_TIMEOUT 48u
 /**
-  * @}
-  */
+ * @}
+ */
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -116,8 +116,8 @@
 /* Exported functions --------------------------------------------------------*/
 
 /** @addtogroup IWDG_Exported_Functions
-  * @{
-  */
+ * @{
+ */
 
 /** @addtogroup IWDG_Exported_Functions_Group1
   *  @brief    Initialization and Start functions.
@@ -137,62 +137,61 @@
   */
 
 /**
-  * @brief  Initialize the IWDG according to the specified parameters in the
-  *         IWDG_InitTypeDef and start watchdog. Before exiting function,
-  *         watchdog is refreshed in order to have correct time base.
-  * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
-  *                the configuration information for the specified IWDG module.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
+ * @brief  Initialize the IWDG according to the specified parameters in the
+ *         IWDG_InitTypeDef and start watchdog. Before exiting function,
+ *         watchdog is refreshed in order to have correct time base.
+ * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
+ *                the configuration information for the specified IWDG module.
+ * @retval HAL status
+ */
+HAL_StatusTypeDef HAL_IWDG_Init( IWDG_HandleTypeDef *hiwdg )
 {
-  uint32_t tickstart;
+    uint32_t tickstart;
 
-  /* Check the IWDG handle allocation */
-  if (hiwdg == NULL)
-  {
-    return HAL_ERROR;
-  }
-
-  /* Check the parameters */
-  assert_param(IS_IWDG_ALL_INSTANCE(hiwdg->Instance));
-  assert_param(IS_IWDG_PRESCALER(hiwdg->Init.Prescaler));
-  assert_param(IS_IWDG_RELOAD(hiwdg->Init.Reload));
-
-  /* Enable IWDG. LSI is turned on automatically */
-  __HAL_IWDG_START(hiwdg);
-
-  /* Enable write access to IWDG_PR and IWDG_RLR registers by writing
-  0x5555 in KR */
-  IWDG_ENABLE_WRITE_ACCESS(hiwdg);
-
-  /* Write to IWDG registers the Prescaler & Reload values to work with */
-  hiwdg->Instance->PR = hiwdg->Init.Prescaler;
-  hiwdg->Instance->RLR = hiwdg->Init.Reload;
-
-  /* Check pending flag, if previous update not done, return timeout */
-  tickstart = HAL_GetTick();
-
-  /* Wait for register to be updated */
-  while (hiwdg->Instance->SR != 0x00u)
-  {
-    if ((HAL_GetTick() - tickstart) > HAL_IWDG_DEFAULT_TIMEOUT)
+    /* Check the IWDG handle allocation */
+    if ( hiwdg == NULL )
     {
-      return HAL_TIMEOUT;
+        return HAL_ERROR;
     }
-  }
 
-  /* Reload IWDG counter with value defined in the reload register */
-  __HAL_IWDG_RELOAD_COUNTER(hiwdg);
+    /* Check the parameters */
+    assert_param( IS_IWDG_ALL_INSTANCE( hiwdg->Instance ) );
+    assert_param( IS_IWDG_PRESCALER( hiwdg->Init.Prescaler ) );
+    assert_param( IS_IWDG_RELOAD( hiwdg->Init.Reload ) );
 
-  /* Return function status */
-  return HAL_OK;
+    /* Enable IWDG. LSI is turned on automatically */
+    __HAL_IWDG_START( hiwdg );
+
+    /* Enable write access to IWDG_PR and IWDG_RLR registers by writing
+    0x5555 in KR */
+    IWDG_ENABLE_WRITE_ACCESS( hiwdg );
+
+    /* Write to IWDG registers the Prescaler & Reload values to work with */
+    hiwdg->Instance->PR = hiwdg->Init.Prescaler;
+    hiwdg->Instance->RLR = hiwdg->Init.Reload;
+
+    /* Check pending flag, if previous update not done, return timeout */
+    tickstart = HAL_GetTick();
+
+    /* Wait for register to be updated */
+    while ( hiwdg->Instance->SR != 0x00u )
+    {
+        if ( ( HAL_GetTick() - tickstart ) > HAL_IWDG_DEFAULT_TIMEOUT )
+        {
+            return HAL_TIMEOUT;
+        }
+    }
+
+    /* Reload IWDG counter with value defined in the reload register */
+    __HAL_IWDG_RELOAD_COUNTER( hiwdg );
+
+    /* Return function status */
+    return HAL_OK;
 }
 
 /**
-  * @}
-  */
-
+ * @}
+ */
 
 /** @addtogroup IWDG_Exported_Functions_Group2
   *  @brief   IO operation functions
@@ -208,37 +207,36 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
   * @{
   */
 
-
 /**
-  * @brief  Refresh the IWDG.
-  * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
-  *                the configuration information for the specified IWDG module.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg)
+ * @brief  Refresh the IWDG.
+ * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
+ *                the configuration information for the specified IWDG module.
+ * @retval HAL status
+ */
+HAL_StatusTypeDef HAL_IWDG_Refresh( IWDG_HandleTypeDef *hiwdg )
 {
-  /* Reload IWDG counter with value defined in the reload register */
-  __HAL_IWDG_RELOAD_COUNTER(hiwdg);
+    /* Reload IWDG counter with value defined in the reload register */
+    __HAL_IWDG_RELOAD_COUNTER( hiwdg );
 
-  /* Return function status */
-  return HAL_OK;
+    /* Return function status */
+    return HAL_OK;
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 #endif /* HAL_IWDG_MODULE_ENABLED */
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
