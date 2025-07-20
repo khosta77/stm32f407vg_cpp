@@ -1,0 +1,56 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+UseTab: Never
+TabWidth: 4
+
+# Стиль переноса скобок:
+# Настройки переноса фигурных скобок
+BraceWrapping:
+  AfterCaseLabel: false        # Не переносить скобку после case
+  AfterClass: true             # Переносить скобку после класса
+  AfterControlStatement: Always  # Всегда переносить скобку после управляющих конструкций
+  AfterEnum: true              # Переносить скобку после enum
+  AfterFunction: true          # Переносить скобку после функции
+  AfterNamespace: true         # Переносить скобку после namespace
+  AfterObjCDeclaration: true   # Переносить скобку после ObjC-объявления
+  AfterStruct: true            # Переносить скобку после struct
+  AfterUnion: true             # Переносить скобку после union
+  BeforeCatch: true            # Переносить скобку перед catch
+  BeforeElse: true             # Переносить скобку перед else
+  IndentBraces: false          # Не делать отступ для скобок
+  SplitEmptyFunction: false    # Не разделять пустые функции
+  SplitEmptyRecord: false      # Не разделять пустые структуры/классы
+  SplitEmptyNamespace: false   # Не разделять пустые пространства имён
+IndentCaseLabels: true
+AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: true          # while(some());
+AllowShortBlocksOnASingleLine: false        # while(some()) {} - переноситься
+BreakBeforeBraces: Allman                   # скобка на новой строке
+IndentExternBlock: NoIndent                 # чтобы отсутпа не было в блоке extern "C"
+
+# Пробелы вокруг операторов:
+SpaceBeforeAssignmentOperators: true  # int x = 5;
+SpacesInParentheses: true             # true `f( a, b )`, false `f(a, b)`
+SpacesInSquareBrackets: false         # Не `a[ 5 ]`, а `a[5]`
+SpacesInAngles: false                 # Не `vector< int >`, а `vector<int>`
+SpaceBeforeParens: ControlStatements  # if() → if (), но функции: foo()
+SpaceAfterCStyleCast: true            # (int) x → (int)x
+
+ColumnLimit: 110      # Максимальная длина строки
+MaxEmptyLinesToKeep: 1  # Максимум 1 пустая строка подряд
+KeepEmptyLinesAtTheStartOfBlocks: true  # Удалять пустые строки в начале блоков
+
+# Перенос длинных строк:
+BreakBeforeBinaryOperators: None  # Переносить после оператора (по умолчанию)
+BinPackArguments: true   # Разрешить "упаковку" аргументов функции в одну строку
+BinPackParameters: true  # Аналогично для параметров
+
+# Пробелы перед/после спецификаторов:
+SpaceBeforeCpp11BracedList: true  # `vector<int>{1, 2}` → `vector<int> {1, 2}`
+SpaceBeforeInheritanceColon: true # `class A : B` → `class A: B` (если false)
+SpaceBeforeRangeBasedForLoopColon: true  # `for (auto x : xs)` → `for (auto x: xs)`
+
+PointerAlignment: Right    # `int* x` (если Right — `int *x`)
+SortIncludes: true        # Сортировка #include
