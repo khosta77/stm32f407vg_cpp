@@ -4,6 +4,7 @@
 *.elf
 *.map
 *.hex
+*.bin
 
 *.DS_Store
 .cproject
