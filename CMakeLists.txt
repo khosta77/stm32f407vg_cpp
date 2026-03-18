@@ -130,8 +130,6 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O binary
         $<TARGET_FILE:${PROJECT_NAME}.elf>
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.bin
-    COMMAND ${CMAKE_SIZE}
-        $<TARGET_FILE:${PROJECT_NAME}.elf>
 )
 
 add_custom_target(flash
