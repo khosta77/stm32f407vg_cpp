@@ -103,7 +103,7 @@ set_source_files_properties(
 set_source_files_properties(
     system/src/newlib/cxx.cpp
     PROPERTIES COMPILE_OPTIONS
-        "-std=gnu++17;-fabi-version=0;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-fno-threadsafe-statics"
+        "-std=gnu++11;-fabi-version=0;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-fno-threadsafe-statics"
 )
 
 set(LINKER_SCRIPT_DIR_GEN ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
