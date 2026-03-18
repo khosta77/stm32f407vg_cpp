@@ -11,11 +11,11 @@ static void delay(uint32_t ms) {
     while (g_ticks - start < ms) {}
 }
 
-constexpr uint16_t LED_GREEN  = 1U << 12;
-constexpr uint16_t LED_ORANGE = 1U << 13;
-constexpr uint16_t LED_RED    = 1U << 14;
-constexpr uint16_t LED_BLUE   = 1U << 15;
-constexpr uint16_t LED_ALL    = LED_GREEN | LED_ORANGE | LED_RED | LED_BLUE;
+constexpr uint32_t LED_GREEN  = GPIO_ODR_OD12;
+constexpr uint32_t LED_ORANGE = GPIO_ODR_OD13;
+constexpr uint32_t LED_RED    = GPIO_ODR_OD14;
+constexpr uint32_t LED_BLUE   = GPIO_ODR_OD15;
+constexpr uint32_t LED_ALL    = LED_GREEN | LED_ORANGE | LED_RED | LED_BLUE;
 
 int main() {
     SysTick_Config(SystemCoreClock / 1000);
@@ -23,7 +23,10 @@ int main() {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
     __DSB();
 
-    GPIOD->MODER |= (1U << 24) | (1U << 26) | (1U << 28) | (1U << 30);
+    GPIOD->MODER |= GPIO_MODER_MODER12_0
+                   | GPIO_MODER_MODER13_0
+                   | GPIO_MODER_MODER14_0
+                   | GPIO_MODER_MODER15_0;
 
     while (true) {
         GPIOD->BSRR = LED_GREEN;
@@ -35,7 +38,7 @@ int main() {
         GPIOD->BSRR = LED_BLUE;
         delay(125);
 
-        GPIOD->BSRR = static_cast<uint32_t>(LED_ALL) << 16;
+        GPIOD->BSRR = LED_ALL << 16;
         delay(500);
     }
 }
