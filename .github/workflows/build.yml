@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM toolchain
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: '13.2.Rel1'
+
+      - name: Configure
+        run: cmake -B build -DSTM32_CHIP=STM32F407VG
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Binary size
+        run: arm-none-eabi-size build/stm32f4_template.elf
