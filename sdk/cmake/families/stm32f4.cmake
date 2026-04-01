@@ -92,6 +92,7 @@ function(stm32f4_get_chip_info CHIP)
     set(STM32_CCM_SIZE ${CCM} PARENT_SCOPE)
     set(STM32_DEFINE ${DEFINE} PARENT_SCOPE)
     set(STM32_VECTORS_FILE ${VECTORS} PARENT_SCOPE)
+    set(STM32_ARCH_FLAGS "-mcpu=cortex-m4;-mthumb;-mfloat-abi=soft" PARENT_SCOPE)
 
     message(STATUS "STM32 chip: ${CHIP}")
     message(STATUS "  Flash: ${FLASH}, RAM: ${RAM}, CCM: ${CCM}")

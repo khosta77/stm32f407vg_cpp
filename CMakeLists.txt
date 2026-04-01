@@ -60,9 +60,7 @@ add_executable(${PROJECT_NAME}.elf
 )
 
 target_compile_options(${PROJECT_NAME}.elf PRIVATE
-    -mcpu=cortex-m4
-    -mthumb
-    -mfloat-abi=soft
+    ${STM32_ARCH_FLAGS}
     -O0
     -fmessage-length=0
     -fsigned-char
@@ -110,9 +108,7 @@ set(LINKER_SCRIPT_DIR_GEN ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
 set(LINKER_SCRIPT_DIR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/ldscripts)
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE
-    -mcpu=cortex-m4
-    -mthumb
-    -mfloat-abi=soft
+    ${STM32_ARCH_FLAGS}
     -T${LINKER_SCRIPT_DIR_GEN}/mem.ld
     -T${LINKER_SCRIPT_DIR_SRC}/libs.ld
     -T${LINKER_SCRIPT_DIR_SRC}/sections.ld
