@@ -30,26 +30,26 @@ set(CMSIS_SOURCES
 )
 
 set(CORTEXM_SOURCES
-    system/src/cortexm/exception-handlers.c
-    system/src/cortexm/initialize-hardware.c
-    system/src/cortexm/reset-hardware.c
+    sdk/core/src/cortexm/exception-handlers.c
+    sdk/core/src/cortexm/initialize-hardware.c
+    sdk/core/src/cortexm/reset-hardware.c
 )
 
 set(DIAG_SOURCES
-    system/src/diag/trace-impl.c
-    system/src/diag/trace.c
+    sdk/core/src/diag/trace-impl.c
+    sdk/core/src/diag/trace.c
 )
 
 set(NEWLIB_C_SOURCES
-    system/src/newlib/assert.c
-    system/src/newlib/exit.c
-    system/src/newlib/sbrk.c
-    system/src/newlib/startup.c
-    system/src/newlib/syscalls.c
+    sdk/core/src/newlib/assert.c
+    sdk/core/src/newlib/exit.c
+    sdk/core/src/newlib/sbrk.c
+    sdk/core/src/newlib/startup.c
+    sdk/core/src/newlib/syscalls.c
 )
 
 set(NEWLIB_CXX_SOURCES
-    system/src/newlib/cxx.cpp
+    sdk/core/src/newlib/cxx.cpp
 )
 
 add_executable(${PROJECT_NAME}.elf
@@ -98,12 +98,12 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
-    system/src/newlib/startup.c
+    sdk/core/src/newlib/startup.c
     PROPERTIES COMPILE_DEFINITIONS "OS_INCLUDE_STARTUP_INIT_MULTIPLE_RAM_SECTIONS"
 )
 
 set_source_files_properties(
-    system/src/newlib/cxx.cpp
+    sdk/core/src/newlib/cxx.cpp
     PROPERTIES COMPILE_OPTIONS
         "-std=gnu++11;-fabi-version=0;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-fno-threadsafe-statics"
 )
