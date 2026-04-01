@@ -8,10 +8,8 @@ endif()
 
 project(stm32f4_template LANGUAGES C CXX)
 
-include(sdk/cmake/families/stm32f4.cmake)
-
-set(STM32_CHIP "STM32F407VG" CACHE STRING "Target STM32F4 chip (e.g. STM32F407VG, STM32F411CE)")
-stm32f4_get_chip_info(${STM32_CHIP})
+set(STM32_CHIP "STM32F407VG" CACHE STRING "Target STM32 chip (e.g. STM32F407VG, STM32F411CE)")
+include(sdk/cmake/stm32_sdk.cmake)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
 configure_file(
