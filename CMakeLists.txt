@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.20)
 
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/arm-none-eabi.cmake
+        ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/stm32_toolchain.cmake
         CACHE FILEPATH "Toolchain file")
 endif()
 
 project(stm32f4_template LANGUAGES C CXX)
 
-include(cmake/stm32f4_chips.cmake)
+include(sdk/cmake/families/stm32f4.cmake)
 
 set(STM32_CHIP "STM32F407VG" CACHE STRING "Target STM32F4 chip (e.g. STM32F407VG, STM32F411CE)")
 stm32f4_get_chip_info(${STM32_CHIP})
