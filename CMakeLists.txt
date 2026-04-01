@@ -25,8 +25,8 @@ set(APP_SOURCES
 )
 
 set(CMSIS_SOURCES
-    system/src/cmsis/system_stm32f4xx.c
-    system/src/cmsis/${STM32_VECTORS_FILE}
+    sdk/hal/stm32f4/src/cmsis/system_stm32f4xx.c
+    sdk/hal/stm32f4/src/cmsis/${STM32_VECTORS_FILE}
 )
 
 set(CORTEXM_SOURCES
@@ -93,7 +93,7 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
 )
 
 set_source_files_properties(
-    system/src/cmsis/system_stm32f4xx.c
+    sdk/hal/stm32f4/src/cmsis/system_stm32f4xx.c
     PROPERTIES COMPILE_OPTIONS "-Wno-padded"
 )
 
