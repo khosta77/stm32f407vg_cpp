@@ -28,12 +28,14 @@ if ! check_cmd pipx; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
+SPEC="stmtool @ git+${REPO}#subdirectory=${TOOL_PATH}"
+
 if check_cmd stmtool; then
-    echo "Upgrading stmtool..."
-    pipx upgrade stmtool 2>/dev/null || pipx install --force "stmtool @ git+${REPO}#subdirectory=${TOOL_PATH}"
+    echo "Reinstalling stmtool (latest from git)..."
+    pipx install --force "$SPEC"
 else
     echo "Installing stmtool..."
-    pipx install "stmtool @ git+${REPO}#subdirectory=${TOOL_PATH}"
+    pipx install "$SPEC"
 fi
 
 echo ""
