@@ -90,7 +90,6 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/include/cmsis
     ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include
     ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include/cmsis
-    ${CMAKE_CURRENT_SOURCE_DIR}/system/include
 )
 
 set_source_files_properties(
