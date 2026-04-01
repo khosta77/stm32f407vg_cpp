@@ -1,0 +1,17 @@
+[project]
+name = "stmtool"
+version = "0.1.0"
+description = "CLI tool for STM32-SDK bare-metal projects"
+requires-python = ">=3.10"
+dependencies = [
+    "typer[all]>=0.9",
+    "rich>=13.0",
+    "tomli>=2.0;python_version<'3.11'",
+]
+
+[project.scripts]
+stmtool = "stmtool.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends._legacy:_Backend"
