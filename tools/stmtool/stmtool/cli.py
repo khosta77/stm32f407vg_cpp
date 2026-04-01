@@ -18,26 +18,24 @@ console = Console()
 DOCKER_IMAGE = "ghcr.io/khosta77/stm32-sdk-build:latest"
 
 
-@project_app.command("create")
+@project_app.command("create", help=t("project_create_help"))
 def project_create(
     name: str = typer.Argument(..., help=t("project_name_help")),
     chip: str = typer.Option(..., "--chip", help=t("chip_help")),
     template: str = typer.Option("blink", "--template", help=t("template_help")),
 ) -> None:
-    """Create a new STM32 project from template."""
     console.print(f"[bold]stmtool project create[/bold] {name} --chip {chip} --template {template}")
     console.print(f"[yellow]{t('not_implemented')}[/yellow]")
     raise typer.Exit(code=1)
 
 
-@app.command()
+@app.command(help=t("build_help"))
 def build(
     release: bool = typer.Option(False, "--release", help=t("build_release")),
     native: bool = typer.Option(False, "--native", help=t("build_native")),
     verbose: bool = typer.Option(False, "--verbose", "-v", help=t("build_verbose")),
     chip: str = typer.Option(None, "--chip", help=t("build_chip")),
 ) -> None:
-    """Build the project (Docker by default)."""
     config = {}
     config_path = Path("stmproject.toml")
     if config_path.exists():
@@ -72,13 +70,12 @@ def build(
     raise typer.Exit(code=result.returncode)
 
 
-@app.command()
+@app.command(help=t("flash_help"))
 def flash(
     tool: str = typer.Option(None, "--tool", help=t("flash_tool")),
     verify: bool = typer.Option(False, "--verify", help=t("flash_verify")),
     erase: bool = typer.Option(False, "--erase", help=t("flash_erase")),
 ) -> None:
-    """Flash firmware to target board."""
     config = {}
     config_path = Path("stmproject.toml")
     if config_path.exists():
@@ -108,9 +105,8 @@ def flash(
         raise typer.Exit(code=1)
 
 
-@app.command()
+@app.command(help=t("doctor_help"))
 def doctor() -> None:
-    """Check development environment."""
     table = Table(title="stmtool doctor")
     table.add_column("Component", style="bold")
     table.add_column("Status")
@@ -139,9 +135,8 @@ def doctor() -> None:
     console.print(table)
 
 
-@app.command()
+@app.command(help=t("version_help"))
 def version() -> None:
-    """Show stmtool version."""
     console.print(f"stmtool {__version__}")
 
 
