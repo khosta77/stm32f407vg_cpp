@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chip: [STM32F407VG, STM32F401CE, STM32F411CE]
 
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +22,7 @@ jobs:
           release: '13.2.Rel1'
 
       - name: Configure
-        run: cmake -B build -DSTM32_CHIP=STM32F407VG
+        run: cmake -B build -DSTM32_CHIP=${{ matrix.chip }}
 
       - name: Build
         run: cmake --build build
