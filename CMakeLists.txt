@@ -88,8 +88,9 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
 target_include_directories(${PROJECT_NAME}.elf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/include/cmsis
+    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include/cmsis
     ${CMAKE_CURRENT_SOURCE_DIR}/system/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/system/include/cmsis
 )
 
 set_source_files_properties(
