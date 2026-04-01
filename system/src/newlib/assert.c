@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "../../include/diag/trace.h"
+#include "diag/trace.h"
 
 // ----------------------------------------------------------------------------
 

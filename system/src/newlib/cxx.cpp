@@ -32,7 +32,7 @@
 
 // ----------------------------------------------------------------------------
 
-#include "../../include/diag/trace.h"
+#include "diag/trace.h"
 #include <stdlib.h>
 #include <sys/types.h>
 

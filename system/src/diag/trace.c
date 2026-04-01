@@ -29,7 +29,7 @@
 
 #if defined( TRACE )
 
-#include "../../include/diag/trace.h"
+#include "diag/trace.h"
 #include "string.h"
 #include <stdarg.h>
 #include <stdio.h>

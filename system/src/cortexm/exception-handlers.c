@@ -27,10 +27,10 @@
 
 // ----------------------------------------------------------------------------
 
-#include "../../include/cortexm/exception-handlers.h"
-#include "../../include/arm/semihosting.h"
-#include "../../include/cmsis/cmsis_device.h"
-#include "../../include/diag/trace.h"
+#include "cortexm/exception-handlers.h"
+#include "arm/semihosting.h"
+#include "cmsis/cmsis_device.h"
+#include "diag/trace.h"
 #include <string.h>
 
 // ----------------------------------------------------------------------------
