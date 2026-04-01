@@ -15,7 +15,7 @@ stm32f4_get_chip_info(${STM32_CHIP})
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts/mem.ld.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/ldscripts/mem.ld.in
     ${CMAKE_CURRENT_BINARY_DIR}/ldscripts/mem.ld
     @ONLY
 )
@@ -109,7 +109,7 @@ set_source_files_properties(
 )
 
 set(LINKER_SCRIPT_DIR_GEN ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
-set(LINKER_SCRIPT_DIR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/ldscripts)
+set(LINKER_SCRIPT_DIR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/ldscripts)
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE
     -mcpu=cortex-m4
