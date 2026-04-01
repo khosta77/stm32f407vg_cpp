@@ -1,0 +1,16 @@
+[project]
+name = "@PROJECT_NAME@"
+version = "0.1.0"
+
+[target]
+chip = "@STM32_CHIP@"
+
+[build]
+optimization = "debug"
+
+[flash]
+tool = "stlink"
+
+[serial]
+port = "auto"
+baudrate = 115200

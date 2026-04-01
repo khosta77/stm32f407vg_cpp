@@ -1,0 +1,5 @@
+[template]
+name = "blink"
+description = "Simple LED blink using SysTick"
+category = "bare-metal"
+families = ["*"]
