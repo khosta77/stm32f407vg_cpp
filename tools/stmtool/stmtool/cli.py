@@ -7,9 +7,10 @@ from rich.table import Table
 
 from stmtool import __version__
 from stmtool.config import load_config
+from stmtool.i18n import t
 
-app = typer.Typer(name="stmtool", help="STM32-SDK project tool", no_args_is_help=True)
-project_app = typer.Typer(help="Project management")
+app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
+project_app = typer.Typer(help=t("project_help"))
 app.add_typer(project_app, name="project")
 
 console = Console()
@@ -19,22 +20,24 @@ DOCKER_IMAGE = "ghcr.io/khosta77/stm32-sdk-build:latest"
 
 @project_app.command("create")
 def project_create(
-    name: str = typer.Argument(..., help="Project name"),
-    chip: str = typer.Option(..., "--chip", help="Target STM32 chip (e.g. STM32F407VG)"),
-    template: str = typer.Option("blink", "--template", help="Template name"),
+    name: str = typer.Argument(..., help=t("project_name_help")),
+    chip: str = typer.Option(..., "--chip", help=t("chip_help")),
+    template: str = typer.Option("blink", "--template", help=t("template_help")),
 ) -> None:
+    """Create a new STM32 project from template."""
     console.print(f"[bold]stmtool project create[/bold] {name} --chip {chip} --template {template}")
-    console.print("[yellow]Not yet implemented[/yellow]")
+    console.print(f"[yellow]{t('not_implemented')}[/yellow]")
     raise typer.Exit(code=1)
 
 
 @app.command()
 def build(
-    release: bool = typer.Option(False, "--release", help="Release build"),
-    native: bool = typer.Option(False, "--native", help="Build locally without Docker"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose CMake output"),
-    chip: str = typer.Option(None, "--chip", help="Override chip from stmproject.toml"),
+    release: bool = typer.Option(False, "--release", help=t("build_release")),
+    native: bool = typer.Option(False, "--native", help=t("build_native")),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help=t("build_verbose")),
+    chip: str = typer.Option(None, "--chip", help=t("build_chip")),
 ) -> None:
+    """Build the project (Docker by default)."""
     config = {}
     config_path = Path("stmproject.toml")
     if config_path.exists():
@@ -42,7 +45,7 @@ def build(
 
     target_chip = chip or config.get("target", {}).get("chip")
     if not target_chip:
-        console.print("[red]Error: no chip specified (use --chip or set target.chip in stmproject.toml)[/red]")
+        console.print(f"[red]{t('no_chip')}[/red]")
         raise typer.Exit(code=1)
 
     build_type = "Release" if release else "Debug"
@@ -50,7 +53,8 @@ def build(
 
     if native:
         cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
-        console.print(f"[bold green]Building {target_chip} ({build_type}) locally...[/bold green]")
+        mode = t("mode_local")
+        console.print(f"[bold green]{t('building', chip=target_chip, build_type=build_type, mode=mode)}[/bold green]")
         result = subprocess.run(cmd, shell=True)
     else:
         cmake_cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
@@ -61,7 +65,8 @@ def build(
             DOCKER_IMAGE,
             "bash", "-c", cmake_cmd,
         ]
-        console.print(f"[bold green]Building {target_chip} ({build_type}) in Docker...[/bold green]")
+        mode = t("mode_docker")
+        console.print(f"[bold green]{t('building', chip=target_chip, build_type=build_type, mode=mode)}[/bold green]")
         result = subprocess.run(cmd)
 
     raise typer.Exit(code=result.returncode)
@@ -69,10 +74,11 @@ def build(
 
 @app.command()
 def flash(
-    tool: str = typer.Option(None, "--tool", help="Flash tool: stlink, openocd, pyocd, jlink"),
-    verify: bool = typer.Option(False, "--verify", help="Verify after flash"),
-    erase: bool = typer.Option(False, "--erase", help="Erase flash before writing"),
+    tool: str = typer.Option(None, "--tool", help=t("flash_tool")),
+    verify: bool = typer.Option(False, "--verify", help=t("flash_verify")),
+    erase: bool = typer.Option(False, "--erase", help=t("flash_erase")),
 ) -> None:
+    """Flash firmware to target board."""
     config = {}
     config_path = Path("stmproject.toml")
     if config_path.exists():
@@ -82,7 +88,7 @@ def flash(
 
     bin_files = list(Path("build").glob("*.bin"))
     if not bin_files:
-        console.print("[red]Error: no .bin file found in build/. Run 'stmtool build' first.[/red]")
+        console.print(f"[red]{t('no_bin')}[/red]")
         raise typer.Exit(code=1)
 
     bin_path = bin_files[0]
@@ -94,16 +100,17 @@ def flash(
         cmd.extend(["--reset", "write", str(bin_path), "0x08000000"])
         if verify:
             cmd.append("--verify")
-        console.print(f"[bold green]Flashing {bin_path.name} via st-link...[/bold green]")
+        console.print(f"[bold green]{t('flashing', name=bin_path.name)}[/bold green]")
         result = subprocess.run(cmd)
         raise typer.Exit(code=result.returncode)
     else:
-        console.print(f"[yellow]Flash tool '{flash_tool}' not yet implemented[/yellow]")
+        console.print(f"[yellow]{t('not_implemented')}[/yellow]")
         raise typer.Exit(code=1)
 
 
 @app.command()
 def doctor() -> None:
+    """Check development environment."""
     table = Table(title="stmtool doctor")
     table.add_column("Component", style="bold")
     table.add_column("Status")
@@ -119,11 +126,11 @@ def doctor() -> None:
     for name, cmd in checks:
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            version = result.stdout.split("\n")[0].strip() if result.returncode == 0 else result.stderr.split("\n")[0].strip()
+            version_line = result.stdout.split("\n")[0].strip() if result.returncode == 0 else result.stderr.split("\n")[0].strip()
             if result.returncode == 0:
-                table.add_row(name, "[green]OK[/green]", version)
+                table.add_row(name, "[green]OK[/green]", version_line)
             else:
-                table.add_row(name, "[red]ERROR[/red]", version)
+                table.add_row(name, "[red]ERROR[/red]", version_line)
         except FileNotFoundError:
             table.add_row(name, "[red]NOT FOUND[/red]", f"Install {name}")
         except subprocess.TimeoutExpired:
@@ -134,6 +141,7 @@ def doctor() -> None:
 
 @app.command()
 def version() -> None:
+    """Show stmtool version."""
     console.print(f"stmtool {__version__}")
 
 
