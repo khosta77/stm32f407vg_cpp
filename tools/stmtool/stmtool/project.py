@@ -128,6 +128,7 @@ def create_project(name: str, chip: str, template_name: str) -> Path:
                 shutil.copy2(item, target / item.name)
 
     (target / ".gitignore").write_text(_GITIGNORE)
+    (target / "README.md").write_text(f"# {name}\n")
 
     subprocess.run(["git", "init"], cwd=target, capture_output=True)
 
