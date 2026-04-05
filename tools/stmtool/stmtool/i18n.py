@@ -119,6 +119,18 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "Downloading SDK...",
         "ru": "Загрузка SDK...",
     },
+    "completion_help": {
+        "en": "Show shell completion script (bash/zsh/fish)",
+        "ru": "Показать скрипт автодополнения (bash/zsh/fish)",
+    },
+    "completion_shell_help": {
+        "en": "Shell type",
+        "ru": "Тип оболочки",
+    },
+    "completion_hint": {
+        "en": "Add this to your shell config to enable autocompletion.",
+        "ru": "Добавьте это в конфигурацию вашей оболочки для автодополнения.",
+    },
     "template_not_found": {
         "en": "Error: template '{name}' not found. Available: {available}",
         "ru": "Ошибка: шаблон '{name}' не найден. Доступные: {available}",
