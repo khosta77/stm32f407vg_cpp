@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from rich.table import Table
 from stmtool import __version__
 from stmtool.config import load_config
 from stmtool.i18n import t
+from stmtool.project import create_project
 
 app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
 project_app = typer.Typer(help=t("project_help"))
@@ -24,9 +26,13 @@ def project_create(
     chip: str = typer.Option(..., "--chip", help=t("chip_help")),
     template: str = typer.Option("blink", "--template", help=t("template_help")),
 ) -> None:
-    console.print(f"[bold]stmtool project create[/bold] {name} --chip {chip} --template {template}")
-    console.print(f"[yellow]{t('not_implemented')}[/yellow]")
-    raise typer.Exit(code=1)
+    try:
+        with console.status(t("initializing_git")):
+            path = create_project(name, chip, template)
+        console.print(f"[bold green]{t('project_created', name=name, path=path)}[/bold green]")
+    except (RuntimeError, ValueError, FileExistsError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
 
 
 @app.command(help=t("build_help"))
@@ -35,11 +41,16 @@ def build(
     native: bool = typer.Option(False, "--native", help=t("build_native")),
     verbose: bool = typer.Option(False, "--verbose", "-v", help=t("build_verbose")),
     chip: str = typer.Option(None, "--chip", help=t("build_chip")),
+    clean: bool = typer.Option(False, "--clean", help=t("build_clean")),
 ) -> None:
     config = {}
     config_path = Path("stmproject.toml")
     if config_path.exists():
         config = load_config(config_path)
+
+    if clean:
+        console.print(f"[yellow]{t('cleaning')}[/yellow]")
+        shutil.rmtree("build", ignore_errors=True)
 
     target_chip = chip or config.get("target", {}).get("chip")
     if not target_chip:

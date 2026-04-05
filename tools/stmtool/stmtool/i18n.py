@@ -99,6 +99,38 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "Error: no .bin file found in build/. Run 'stmtool build' first.",
         "ru": "Ошибка: файл .bin не найден в build/. Сначала запустите 'stmtool build'.",
     },
+    "project_created": {
+        "en": "Project '{name}' created at {path}",
+        "ru": "Проект '{name}' создан в {path}",
+    },
+    "project_exists": {
+        "en": "Error: directory '{name}' already exists",
+        "ru": "Ошибка: директория '{name}' уже существует",
+    },
+    "sdk_not_found": {
+        "en": "Error: SDK not found. Set STMSDK_PATH environment variable.",
+        "ru": "Ошибка: SDK не найден. Установите переменную окружения STMSDK_PATH.",
+    },
+    "template_not_found": {
+        "en": "Error: template '{name}' not found. Available: {available}",
+        "ru": "Ошибка: шаблон '{name}' не найден. Доступные: {available}",
+    },
+    "invalid_chip": {
+        "en": "Error: invalid chip format '{chip}'",
+        "ru": "Ошибка: неверный формат чипа '{chip}'",
+    },
+    "initializing_git": {
+        "en": "Creating project...",
+        "ru": "Создание проекта...",
+    },
+    "build_clean": {
+        "en": "Clean build directory before building",
+        "ru": "Очистить директорию сборки перед сборкой",
+    },
+    "cleaning": {
+        "en": "Cleaning build directory...",
+        "ru": "Очистка директории сборки...",
+    },
 }
 
 

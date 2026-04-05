@@ -1,19 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 
+set(STM32_SDK "${CMAKE_CURRENT_SOURCE_DIR}/stm32-sdk/sdk" CACHE PATH "Path to STM32 SDK")
+
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE
-        ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/stm32_toolchain.cmake
+        ${STM32_SDK}/cmake/stm32_toolchain.cmake
         CACHE FILEPATH "Toolchain file")
 endif()
 
 project(@PROJECT_NAME@ LANGUAGES C CXX)
 
 set(STM32_CHIP "@STM32_CHIP@" CACHE STRING "Target STM32 chip")
-include(sdk/cmake/stm32_sdk.cmake)
+include(${STM32_SDK}/cmake/stm32_sdk.cmake)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/ldscripts/mem.ld.in
+    ${STM32_SDK}/hal/stm32f4/ldscripts/mem.ld.in
     ${CMAKE_CURRENT_BINARY_DIR}/ldscripts/mem.ld
     @ONLY
 )
@@ -23,31 +25,31 @@ set(APP_SOURCES
 )
 
 set(CMSIS_SOURCES
-    sdk/hal/stm32f4/src/cmsis/system_stm32f4xx.c
-    sdk/hal/stm32f4/src/cmsis/${STM32_VECTORS_FILE}
+    ${STM32_SDK}/hal/stm32f4/src/cmsis/system_stm32f4xx.c
+    ${STM32_SDK}/hal/stm32f4/src/cmsis/${STM32_VECTORS_FILE}
 )
 
 set(CORTEXM_SOURCES
-    sdk/core/src/cortexm/exception-handlers.c
-    sdk/core/src/cortexm/initialize-hardware.c
-    sdk/core/src/cortexm/reset-hardware.c
+    ${STM32_SDK}/core/src/cortexm/exception-handlers.c
+    ${STM32_SDK}/core/src/cortexm/initialize-hardware.c
+    ${STM32_SDK}/core/src/cortexm/reset-hardware.c
 )
 
 set(DIAG_SOURCES
-    sdk/core/src/diag/trace-impl.c
-    sdk/core/src/diag/trace.c
+    ${STM32_SDK}/core/src/diag/trace-impl.c
+    ${STM32_SDK}/core/src/diag/trace.c
 )
 
 set(NEWLIB_C_SOURCES
-    sdk/core/src/newlib/assert.c
-    sdk/core/src/newlib/exit.c
-    sdk/core/src/newlib/sbrk.c
-    sdk/core/src/newlib/startup.c
-    sdk/core/src/newlib/syscalls.c
+    ${STM32_SDK}/core/src/newlib/assert.c
+    ${STM32_SDK}/core/src/newlib/exit.c
+    ${STM32_SDK}/core/src/newlib/sbrk.c
+    ${STM32_SDK}/core/src/newlib/startup.c
+    ${STM32_SDK}/core/src/newlib/syscalls.c
 )
 
 set(NEWLIB_CXX_SOURCES
-    sdk/core/src/newlib/cxx.cpp
+    ${STM32_SDK}/core/src/newlib/cxx.cpp
 )
 
 add_executable(${PROJECT_NAME}.elf
@@ -82,30 +84,30 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
 )
 
 target_include_directories(${PROJECT_NAME}.elf PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/include/cmsis
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/sdk/hal/stm32f4/include/cmsis
+    ${STM32_SDK}/core/include
+    ${STM32_SDK}/core/include/cmsis
+    ${STM32_SDK}/hal/stm32f4/include
+    ${STM32_SDK}/hal/stm32f4/include/cmsis
 )
 
 set_source_files_properties(
-    sdk/hal/stm32f4/src/cmsis/system_stm32f4xx.c
+    ${STM32_SDK}/hal/stm32f4/src/cmsis/system_stm32f4xx.c
     PROPERTIES COMPILE_OPTIONS "-Wno-padded"
 )
 
 set_source_files_properties(
-    sdk/core/src/newlib/startup.c
+    ${STM32_SDK}/core/src/newlib/startup.c
     PROPERTIES COMPILE_DEFINITIONS "OS_INCLUDE_STARTUP_INIT_MULTIPLE_RAM_SECTIONS"
 )
 
 set_source_files_properties(
-    sdk/core/src/newlib/cxx.cpp
+    ${STM32_SDK}/core/src/newlib/cxx.cpp
     PROPERTIES COMPILE_OPTIONS
         "-std=gnu++11;-fabi-version=0;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-fno-threadsafe-statics"
 )
 
 set(LINKER_SCRIPT_DIR_GEN ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
-set(LINKER_SCRIPT_DIR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/sdk/core/ldscripts)
+set(LINKER_SCRIPT_DIR_SRC ${STM32_SDK}/core/ldscripts)
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE
     ${STM32_ARCH_FLAGS}
