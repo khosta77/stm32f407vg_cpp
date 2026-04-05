@@ -45,6 +45,12 @@ def resolve_sdk_root() -> Path:
 
 
 def resolve_sdk_repo_url(sdk_root: Path) -> str:
+    import os
+
+    env_repo = os.environ.get("STMSDK_REPO")
+    if env_repo:
+        return env_repo
+
     try:
         result = subprocess.run(
             ["git", "-C", str(sdk_root), "remote", "get-url", "origin"],
