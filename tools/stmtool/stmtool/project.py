@@ -27,21 +27,46 @@ __pycache__/
 """
 
 
+_SDK_CACHE_DIR = Path.home() / ".stmtool" / "stm32-sdk"
+
+
+def _is_sdk_root(p: Path) -> bool:
+    return (p / "sdk").is_dir() and (p / "templates").is_dir()
+
+
+def _clone_sdk_cache() -> Path:
+    import sys
+
+    print(t("sdk_cloning"), file=sys.stderr)
+    _SDK_CACHE_DIR.parent.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        ["git", "clone", "--depth", "1", _DEFAULT_REPO, str(_SDK_CACHE_DIR)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(t("sdk_not_found"))
+    return _SDK_CACHE_DIR
+
+
 def resolve_sdk_root() -> Path:
     import os
 
     env_path = os.environ.get("STMSDK_PATH")
     if env_path:
         p = Path(env_path)
-        if (p / "sdk").is_dir() and (p / "templates").is_dir():
+        if _is_sdk_root(p):
             return p
 
     current = Path(__file__).resolve()
     for parent in current.parents:
-        if (parent / "sdk").is_dir() and (parent / "templates").is_dir():
+        if _is_sdk_root(parent):
             return parent
 
-    raise RuntimeError(t("sdk_not_found"))
+    if _is_sdk_root(_SDK_CACHE_DIR):
+        return _SDK_CACHE_DIR
+
+    return _clone_sdk_cache()
 
 
 def resolve_sdk_repo_url(sdk_root: Path) -> str:

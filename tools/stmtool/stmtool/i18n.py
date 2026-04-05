@@ -108,8 +108,12 @@ _STRINGS: dict[str, dict[str, str]] = {
         "ru": "Ошибка: директория '{name}' уже существует",
     },
     "sdk_not_found": {
-        "en": "Error: SDK not found. Set STMSDK_PATH environment variable.",
-        "ru": "Ошибка: SDK не найден. Установите переменную окружения STMSDK_PATH.",
+        "en": "Error: SDK not found. Check network connection or set STMSDK_PATH.",
+        "ru": "Ошибка: SDK не найден. Проверьте сеть или установите STMSDK_PATH.",
+    },
+    "sdk_cloning": {
+        "en": "Downloading SDK to ~/.stmtool/stm32-sdk...",
+        "ru": "Загрузка SDK в ~/.stmtool/stm32-sdk...",
     },
     "template_not_found": {
         "en": "Error: template '{name}' not found. Available: {available}",
