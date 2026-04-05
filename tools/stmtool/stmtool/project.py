@@ -127,10 +127,11 @@ def create_project(name: str, chip: str, template_name: str) -> Path:
     (target / ".gitignore").write_text(_GITIGNORE)
 
     subprocess.run(["git", "init"], cwd=target, capture_output=True)
-    subprocess.run(
-        ["git", "submodule", "add", repo_url, "stm32-sdk"],
-        cwd=target,
-        capture_output=True,
-    )
+
+    submodule_cmd = ["git"]
+    if repo_url.startswith("file://"):
+        submodule_cmd += ["-c", "protocol.file.allow=always"]
+    submodule_cmd += ["submodule", "add", repo_url, "stm32-sdk"]
+    subprocess.run(submodule_cmd, cwd=target, capture_output=True)
 
     return target
