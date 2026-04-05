@@ -2,12 +2,14 @@
 
 Bare-metal C++17 экосистема для STM32 (CMSIS only).
 
-## Сборка
+## Использование
 
 ```bash
-cmake -B build -DSTM32_CHIP=STM32F407VG
-cmake --build build
-cmake --build build --target flash
+pip install ./tools/stmtool
+stmtool project create my-project --chip STM32F407VG
+cd my-project
+stmtool build --native
+stmtool flash
 ```
 
 ## Правила
@@ -20,17 +22,11 @@ cmake --build build --target flash
 
 ## Структура
 
-- `src/` -- пользовательский код (пример blink)
-- `sdk/core/include/cmsis/` -- ARM CMSIS core headers (core_cm*.h)
-- `sdk/core/include/{cortexm,diag,arm}/` -- generic Cortex-M headers
-- `sdk/core/src/{cortexm,diag,newlib}/` -- generic Cortex-M sources
-- `sdk/core/ldscripts/` -- sections.ld, libs.ld (generic)
-- `sdk/hal/stm32f4/include/cmsis/` -- STM32F4 device headers
-- `sdk/hal/stm32f4/src/cmsis/` -- system init + vector tables
-- `sdk/hal/stm32f4/ldscripts/` -- mem.ld.in (F4 memory layout)
-- `sdk/cmake/` -- stm32_sdk.cmake (entry), stm32_toolchain.cmake, families/
+- `sdk/core/` -- ARM CMSIS core, Cortex-M runtime, newlib, linker scripts
+- `sdk/hal/stm32f4/` -- STM32F4 device headers, vector tables, memory layout
+- `sdk/cmake/` -- stm32_sdk.cmake, stm32_toolchain.cmake, families/
 - `templates/` -- project templates (blink, etc.)
-- `tools/stmtool/` -- Python CLI tool
+- `tools/stmtool/` -- Python CLI tool (Typer + Rich)
 - `docker/` -- Dockerfiles for build environment
 
 ## Выбор чипа
