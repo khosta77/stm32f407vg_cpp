@@ -38,6 +38,34 @@ else
     pipx install "$SPEC"
 fi
 
+SHELL_NAME=$(basename "$SHELL")
+COMPLETION_MARKER="# stmtool completion"
+
+case "$SHELL_NAME" in
+    zsh)
+        RC_FILE="$HOME/.zshrc"
+        ;;
+    bash)
+        RC_FILE="$HOME/.bashrc"
+        ;;
+    *)
+        RC_FILE=""
+        ;;
+esac
+
+if [ -n "$RC_FILE" ]; then
+    if ! grep -q "$COMPLETION_MARKER" "$RC_FILE" 2>/dev/null; then
+        echo ""
+        echo "Installing $SHELL_NAME completion..."
+        {
+            echo ""
+            echo "$COMPLETION_MARKER"
+            stmtool completion "$SHELL_NAME" 2>/dev/null
+        } >> "$RC_FILE"
+        echo "Completion added to $RC_FILE"
+    fi
+fi
+
 echo ""
 echo "stmtool installed:"
 stmtool version
