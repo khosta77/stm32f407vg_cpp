@@ -9,6 +9,7 @@ from rich.table import Table
 from stmtool import __version__
 from stmtool.config import load_config
 from stmtool.i18n import t
+from stmtool.completions import complete_chip, complete_flash_tool, complete_template
 from stmtool.project import create_project, resolve_sdk_root
 
 app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
@@ -23,8 +24,8 @@ DOCKER_IMAGE = "ghcr.io/khosta77/stm32-sdk-build:latest"
 @project_app.command("create", help=t("project_create_help"))
 def project_create(
     name: str = typer.Argument(..., help=t("project_name_help")),
-    chip: str = typer.Option(..., "--chip", help=t("chip_help")),
-    template: str = typer.Option("blink", "--template", help=t("template_help")),
+    chip: str = typer.Option(..., "--chip", help=t("chip_help"), autocompletion=complete_chip),
+    template: str = typer.Option("blink", "--template", help=t("template_help"), autocompletion=complete_template),
 ) -> None:
     try:
         with console.status(t("initializing_git")):
@@ -40,7 +41,7 @@ def build(
     release: bool = typer.Option(False, "--release", help=t("build_release")),
     native: bool = typer.Option(False, "--native", help=t("build_native")),
     verbose: bool = typer.Option(False, "--verbose", "-v", help=t("build_verbose")),
-    chip: str = typer.Option(None, "--chip", help=t("build_chip")),
+    chip: str = typer.Option(None, "--chip", help=t("build_chip"), autocompletion=complete_chip),
     clean: bool = typer.Option(False, "--clean", help=t("build_clean")),
 ) -> None:
     config = {}
@@ -91,7 +92,7 @@ def build(
 
 @app.command(help=t("flash_help"))
 def flash(
-    tool: str = typer.Option(None, "--tool", help=t("flash_tool")),
+    tool: str = typer.Option(None, "--tool", help=t("flash_tool"), autocompletion=complete_flash_tool),
     verify: bool = typer.Option(False, "--verify", help=t("flash_verify")),
     erase: bool = typer.Option(False, "--erase", help=t("flash_erase")),
 ) -> None:
@@ -152,6 +153,28 @@ def doctor() -> None:
             table.add_row(name, "[yellow]TIMEOUT[/yellow]", "")
 
     console.print(table)
+
+
+@app.command(help=t("completion_help"))
+def completion(
+    shell: str = typer.Argument("zsh", help=t("completion_shell_help")),
+) -> None:
+    import os
+
+    env = os.environ.copy()
+    env["_STMTOOL_COMPLETE"] = f"source_{shell}"
+    result = subprocess.run(
+        ["stmtool"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        console.print(f"[dim]# {t('completion_hint')}[/dim]")
+        print(result.stdout)
+    else:
+        console.print(f"[red]{result.stdout or result.stderr}[/red]")
+        raise typer.Exit(code=1)
 
 
 @app.command(help=t("version_help"))
