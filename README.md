@@ -1,42 +1,48 @@
-# stm32f4_template
+# stm32-sdk
 
-Bare-metal C++17 шаблон для микроконтроллеров серии STM32F4. Только CMSIS, без HAL/LL.
+Bare-metal C++17 SDK for STM32 microcontrollers. CMSIS only, no HAL/LL.
 
-## Требования
+## Quick Start
+
+```bash
+pip install ./tools/stmtool
+stmtool project create my-blink --chip STM32F407VG
+cd my-blink
+stmtool build --native
+stmtool flash
+```
+
+## Requirements
 
 - `arm-none-eabi-gcc` >= 12
 - `cmake` >= 3.20
-- `st-flash` (опционально, для прошивки через ST-Link)
+- `python` >= 3.10
+- `st-flash` (optional, for flashing via ST-Link)
 
-## Быстрый старт
+## stmtool CLI
 
-```bash
-cmake -B build -DSTM32_CHIP=STM32F407VG
-cmake --build build
-```
+| Command | Description |
+|---------|-------------|
+| `stmtool project create <name> --chip <chip>` | Create new project from template |
+| `stmtool build` | Build project (Docker by default) |
+| `stmtool build --native` | Build locally without Docker |
+| `stmtool build --clean` | Clean build directory before building |
+| `stmtool flash` | Flash firmware via st-link |
+| `stmtool doctor` | Check development environment |
+| `stmtool version` | Show stmtool version |
 
-## Прошивка
+### Environment variables
 
-```bash
-cmake --build build --target flash
-```
+| Variable | Description |
+|----------|-------------|
+| `STMSDK_PATH` | Path to SDK repository (auto-detected if stmtool installed from repo) |
+| `STMSDK_REPO` | Override git URL for SDK submodule |
+| `STMTOOL_LANG` | UI language: `en` (default), `ru` |
 
-Или вручную:
+## Supported chips
 
-```bash
-st-flash --reset write build/stm32f4_template.bin 0x08000000
-```
-
-## Выбор чипа
-
-```bash
-cmake -B build -DSTM32_CHIP=STM32F411CE
-```
-
-Поддерживаемые семейства:
-
-| Семейство | RAM | CCM | Flash | Пример чипа |
-|-----------|-----|-----|-------|-------------|
+| Family | RAM | CCM | Flash | Example |
+|--------|-----|-----|-------|---------|
 | STM32F401 | 64-96K | - | 128-512K | STM32F401CC, STM32F401RE |
 | STM32F405 | 128K | 64K | 512-1024K | STM32F405RG |
 | STM32F407 | 128K | 64K | 512-1024K | STM32F407VG |
@@ -46,37 +52,37 @@ cmake -B build -DSTM32_CHIP=STM32F411CE
 | STM32F439 | 192K | 64K | 512-2048K | STM32F439ZI |
 | STM32F446 | 128K | - | 256-512K | STM32F446RE |
 
-Размер Flash определяется автоматически из имени чипа (буква в позиции 11: B=128K, C=256K, E=512K, G=1024K, I=2048K).
+Flash size is determined from chip name (letter at position 11: B=128K, C=256K, E=512K, G=1024K, I=2048K).
 
-## Структура проекта
+## Project structure
 
 ```
-.
-├── CMakeLists.txt
-├── cmake/
-│   ├── arm-none-eabi.cmake      # Toolchain для кросс-компиляции
-│   └── stm32f4_chips.cmake      # База данных чипов STM32F4
-├── ldscripts/
-│   ├── mem.ld.in                # Шаблон карты памяти (parameterized)
-│   ├── sections.ld              # Разделы линковки
-│   └── libs.ld                  # Подключение библиотек
-├── src/
-│   └── main.cpp                 # Точка входа (LED blink для Discovery)
-├── system/
-│   ├── include/
-│   │   ├── cmsis/               # CMSIS headers для STM32F4
-│   │   ├── cortexm/             # Обработчики исключений Cortex-M
-│   │   ├── diag/                # Trace/отладка
-│   │   └── arm/                 # ARM semihosting
-│   └── src/
-│       ├── cmsis/               # System init + vector tables
-│       ├── cortexm/             # Hardware init, exception handlers
-│       ├── diag/                # Trace implementation
-│       └── newlib/              # Newlib integration (startup, syscalls)
-└── docs/
-    └── DATASHEETS.md            # Ссылки на документацию ST
+stm32-sdk/
+  sdk/
+    cmake/            CMake toolchain and family configs
+    core/             Cortex-M runtime, newlib, linker scripts
+    hal/stm32f4/      STM32F4 CMSIS headers, vectors, memory layout
+  templates/          Project templates (blink, etc.)
+  tools/stmtool/      Python CLI tool
+  docker/             Build environment Dockerfiles
 ```
 
-## Лицензия
+Generated project:
+```
+my-project/
+  src/main.cpp        Application code
+  stm32-sdk/          Git submodule -> stm32-sdk repo
+  CMakeLists.txt      Build configuration
+  stmproject.toml     Project config (chip, flash tool, etc.)
+```
+
+## Adding a new chip family
+
+1. Create `sdk/cmake/families/stm32XX.cmake` with `stm32XX_get_chip_info` function
+2. Add CMSIS device headers to `sdk/hal/stm32XX/include/cmsis/`
+3. Create vector tables in `sdk/hal/stm32XX/src/cmsis/`
+4. Create `sdk/hal/stm32XX/ldscripts/mem.ld.in`
+
+## License
 
 MIT
