@@ -69,27 +69,6 @@ def resolve_sdk_root() -> Path:
     return _clone_sdk_cache()
 
 
-def resolve_sdk_repo_url(sdk_root: Path) -> str:
-    import os
-
-    env_repo = os.environ.get("STMSDK_REPO")
-    if env_repo:
-        return env_repo
-
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(sdk_root), "remote", "get-url", "origin"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-    return _DEFAULT_REPO
-
-
 def discover_template(sdk_root: Path, template_name: str) -> Path:
     templates_dir = sdk_root / "templates"
     available: list[str] = []
@@ -118,7 +97,6 @@ def discover_template(sdk_root: Path, template_name: str) -> Path:
 def create_project(name: str, chip: str, template_name: str) -> Path:
     sdk_root = resolve_sdk_root()
     tpl_dir = discover_template(sdk_root, template_name)
-    repo_url = resolve_sdk_repo_url(sdk_root)
 
     chip = chip.upper()
     if not _CHIP_RE.match(chip):
@@ -152,11 +130,5 @@ def create_project(name: str, chip: str, template_name: str) -> Path:
     (target / ".gitignore").write_text(_GITIGNORE)
 
     subprocess.run(["git", "init"], cwd=target, capture_output=True)
-
-    submodule_cmd = ["git"]
-    if repo_url.startswith("file://"):
-        submodule_cmd += ["-c", "protocol.file.allow=always"]
-    submodule_cmd += ["submodule", "add", repo_url, "stm32-sdk"]
-    subprocess.run(submodule_cmd, cwd=target, capture_output=True)
 
     return target

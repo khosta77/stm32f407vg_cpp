@@ -35,8 +35,7 @@ stmtool flash
 
 | Variable | Description |
 |----------|-------------|
-| `STMSDK_PATH` | Path to SDK repository (auto-detected if stmtool installed from repo) |
-| `STMSDK_REPO` | Override git URL for SDK submodule |
+| `STMSDK_PATH` | Path to SDK repository (auto-detected or cached at `~/.stmtool/stm32-sdk/`) |
 | `STMTOOL_LANG` | UI language: `en` (default), `ru` |
 
 ## Supported chips
@@ -71,10 +70,12 @@ Generated project:
 ```
 my-project/
   src/main.cpp        Application code
-  stm32-sdk/          Git submodule -> stm32-sdk repo
   CMakeLists.txt      Build configuration
   stmproject.toml     Project config (chip, flash tool, etc.)
+  .gitignore
 ```
+
+SDK is resolved automatically by `stmtool build` (cached at `~/.stmtool/stm32-sdk/`).
 
 ## Adding a new chip family
 

@@ -33,13 +33,13 @@ jobs:
         run: stmtool project create ci-test --chip ${{ matrix.chip }}
         env:
           STMSDK_PATH: ${{ github.workspace }}
-          STMSDK_REPO: file://${{ github.workspace }}
 
       - name: Build
         run: |
           cd ci-test
-          cmake -B build -DSTM32_CHIP=${{ matrix.chip }}
-          cmake --build build
+          stmtool build --native
+        env:
+          STMSDK_PATH: ${{ github.workspace }}
 
       - name: Binary size
         run: arm-none-eabi-size ci-test/build/ci-test.elf

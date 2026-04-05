@@ -115,6 +115,10 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "Downloading SDK to ~/.stmtool/stm32-sdk...",
         "ru": "Загрузка SDK в ~/.stmtool/stm32-sdk...",
     },
+    "sdk_downloading": {
+        "en": "Downloading SDK...",
+        "ru": "Загрузка SDK...",
+    },
     "template_not_found": {
         "en": "Error: template '{name}' not found. Available: {available}",
         "ru": "Ошибка: шаблон '{name}' не найден. Доступные: {available}",

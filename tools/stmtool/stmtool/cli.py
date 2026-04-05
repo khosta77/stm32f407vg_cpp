@@ -9,7 +9,7 @@ from rich.table import Table
 from stmtool import __version__
 from stmtool.config import load_config
 from stmtool.i18n import t
-from stmtool.project import create_project
+from stmtool.project import create_project, resolve_sdk_root
 
 app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
 project_app = typer.Typer(help=t("project_help"))
@@ -52,6 +52,13 @@ def build(
         console.print(f"[yellow]{t('cleaning')}[/yellow]")
         shutil.rmtree("build", ignore_errors=True)
 
+    try:
+        sdk_root = resolve_sdk_root()
+        sdk_path = sdk_root / "sdk"
+    except RuntimeError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
+
     target_chip = chip or config.get("target", {}).get("chip")
     if not target_chip:
         console.print(f"[red]{t('no_chip')}[/red]")
@@ -61,15 +68,16 @@ def build(
     verbose_flag = "--verbose" if verbose else ""
 
     if native:
-        cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
+        cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DSTM32_SDK={sdk_path} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
         mode = t("mode_local")
         console.print(f"[bold green]{t('building', chip=target_chip, build_type=build_type, mode=mode)}[/bold green]")
         result = subprocess.run(cmd, shell=True)
     else:
-        cmake_cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
+        cmake_cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DSTM32_SDK=/sdk-repo/sdk -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
         cmd = [
             "docker", "run", "--rm",
             "-v", f"{Path.cwd()}:/workspace",
+            "-v", f"{sdk_root}:/sdk-repo:ro",
             "-w", "/workspace",
             DOCKER_IMAGE,
             "bash", "-c", cmake_cmd,
