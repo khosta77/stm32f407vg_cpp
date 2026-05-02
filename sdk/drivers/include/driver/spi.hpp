@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
+#include "driver/types.hpp"
+#include <span>
 
 namespace driver {
 
@@ -16,12 +16,12 @@ class ISpi {
 public:
     virtual ~ISpi() = default;
 
-    virtual bool init(const SpiConfig& cfg) = 0;
+    virtual Status init(const SpiConfig& cfg) = 0;
     virtual void deinit() = 0;
 
-    virtual bool transfer(const uint8_t* txData, uint8_t* rxData, size_t len, uint32_t timeoutMs = 100) = 0;
-    virtual bool write(const uint8_t* data, size_t len, uint32_t timeoutMs = 100) = 0;
-    virtual bool read(uint8_t* data, size_t len, uint32_t timeoutMs = 100) = 0;
+    virtual Status transfer(std::span<const uint8_t> txData, std::span<uint8_t> rxData) = 0;
+    virtual Status write(std::span<const uint8_t> data) = 0;
+    virtual Status read(std::span<uint8_t> data) = 0;
 };
 
 } // namespace driver

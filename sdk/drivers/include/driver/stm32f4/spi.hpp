@@ -1,3 +1,5 @@
+#pragma once
+
 #include "driver/spi.hpp"
 #include "cmsis/stm32f4xx.h"
 
@@ -11,6 +13,7 @@ namespace stm32f4 {
 
 class Spi : public ISpi {
     SPI_TypeDef* const _periph;
+    SpiConfig _cfg;
     bool _initialized = false;
 
 #ifdef STM32_USE_FREERTOS
@@ -43,7 +46,8 @@ class Spi : public ISpi {
 public:
     explicit Spi(SPI_TypeDef* periph) : _periph(periph) {}
 
-    bool init(const SpiConfig& cfg) override {
+    Status init(const SpiConfig& cfg) override {
+        _cfg = cfg;
         _periph->CR1 = 0;
 
         uint32_t cr1 = SPI_CR1_MSTR | SPI_CR1_SSI | SPI_CR1_SSM;
@@ -67,7 +71,7 @@ public:
 #endif
 
         _initialized = true;
-        return true;
+        return Status::Ok;
     }
 
     void deinit() override {
@@ -82,20 +86,19 @@ public:
         _initialized = false;
     }
 
-    bool transfer(const uint8_t* txData, uint8_t* rxData, size_t len, uint32_t timeoutMs) override {
-        (void)timeoutMs;
-
+    Status transfer(std::span<const uint8_t> txData, std::span<uint8_t> rxData) override {
 #ifdef STM32_USE_FREERTOS
         xSemaphoreTake(_mutex, portMAX_DELAY);
 #endif
 
-        bool ok = true;
+        size_t len = txData.size();
+        Status result = Status::Ok;
         for (size_t i = 0; i < len; ++i) {
-            if (!waitTxe()) { ok = false; break; }
-            _periph->DR = txData ? txData[i] : 0xFF;
-            if (!waitRxne()) { ok = false; break; }
+            if (!waitTxe()) { result = Status::Timeout; break; }
+            _periph->DR = txData[i];
+            if (!waitRxne()) { result = Status::Timeout; break; }
             uint8_t rx = static_cast<uint8_t>(_periph->DR);
-            if (rxData) rxData[i] = rx;
+            if (i < rxData.size()) rxData[i] = rx;
         }
         waitNotBusy();
 
@@ -103,15 +106,32 @@ public:
         xSemaphoreGive(_mutex);
 #endif
 
-        return ok;
+        return result;
     }
 
-    bool write(const uint8_t* data, size_t len, uint32_t timeoutMs) override {
-        return transfer(data, nullptr, len, timeoutMs);
+    Status write(std::span<const uint8_t> data) override {
+        uint8_t dummy;
+        std::span<uint8_t> rxDummy(&dummy, 0);
+        return transfer(data, rxDummy);
     }
 
-    bool read(uint8_t* data, size_t len, uint32_t timeoutMs) override {
-        return transfer(nullptr, data, len, timeoutMs);
+    Status read(std::span<uint8_t> data) override {
+        uint8_t fillByte = 0xFF;
+        Status result = Status::Ok;
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreTake(_mutex, portMAX_DELAY);
+#endif
+        for (size_t i = 0; i < data.size(); ++i) {
+            if (!waitTxe()) { result = Status::Timeout; break; }
+            _periph->DR = fillByte;
+            if (!waitRxne()) { result = Status::Timeout; break; }
+            data[i] = static_cast<uint8_t>(_periph->DR);
+        }
+        waitNotBusy();
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreGive(_mutex);
+#endif
+        return result;
     }
 };
 

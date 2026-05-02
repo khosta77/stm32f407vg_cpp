@@ -1,3 +1,5 @@
+#pragma once
+
 #include "driver/i2c.hpp"
 #include "cmsis/stm32f4xx.h"
 
@@ -43,13 +45,12 @@ class I2c : public II2c {
         _periph->CR1 |= I2C_CR1_STOP;
     }
 
-    bool sendAddress(uint8_t addr, bool read) const {
-        _periph->DR = (addr << 1) | (read ? 1 : 0);
+    bool sendAddress(uint8_t addr, bool readOp) const {
+        _periph->DR = (addr << 1) | (readOp ? 1 : 0);
         if (!waitFlag(_periph->SR1, I2C_SR1_ADDR, true)) {
             if (_periph->SR1 & I2C_SR1_AF) {
                 _periph->SR1 &= ~I2C_SR1_AF;
                 generateStop();
-                return false;
             }
             return false;
         }
@@ -63,10 +64,22 @@ class I2c : public II2c {
         _periph->CR1 &= ~I2C_CR1_SWRST;
     }
 
+    void lockBus() {
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreTake(_mutex, portMAX_DELAY);
+#endif
+    }
+
+    void unlockBus() {
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreGive(_mutex);
+#endif
+    }
+
 public:
     explicit I2c(I2C_TypeDef* periph) : _periph(periph) {}
 
-    bool init(const I2cConfig& cfg) override {
+    Status init(const I2cConfig& cfg) override {
         uint32_t pclk = SystemCoreClock / 4;
 
         _periph->CR1 = I2C_CR1_SWRST;
@@ -90,7 +103,7 @@ public:
 #endif
 
         _initialized = true;
-        return true;
+        return Status::Ok;
     }
 
     void deinit() override {
@@ -104,128 +117,108 @@ public:
         _initialized = false;
     }
 
-    bool write(uint8_t addr, const uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    Status write(uint8_t addr, std::span<const uint8_t> data, uint32_t timeoutMs) override {
         (void)timeoutMs;
+        lockBus();
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreTake(_mutex, portMAX_DELAY);
-#endif
-
-        bool ok = false;
-
+        Status result = Status::BusError;
         if (waitBusy()) {
             generateStart();
             if (sendAddress(addr, false)) {
-                ok = true;
-                for (size_t i = 0; i < len; ++i) {
+                result = Status::Ok;
+                for (auto byte : data) {
                     if (!waitFlag(_periph->SR1, I2C_SR1_TXE, true)) {
-                        ok = false;
+                        result = Status::Timeout;
                         break;
                     }
-                    _periph->DR = data[i];
+                    _periph->DR = byte;
                 }
-                if (ok) waitFlag(_periph->SR1, I2C_SR1_BTF, true);
+                if (result == Status::Ok) waitFlag(_periph->SR1, I2C_SR1_BTF, true);
                 generateStop();
+            } else {
+                result = Status::Nack;
             }
         }
 
-        if (!ok) busRecovery();
-
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreGive(_mutex);
-#endif
-
-        return ok;
+        if (result != Status::Ok) busRecovery();
+        unlockBus();
+        return result;
     }
 
-    bool read(uint8_t addr, uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    Status read(uint8_t addr, std::span<uint8_t> data, uint32_t timeoutMs) override {
         (void)timeoutMs;
+        lockBus();
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreTake(_mutex, portMAX_DELAY);
-#endif
-
-        bool ok = false;
-
+        Status result = Status::BusError;
         if (waitBusy()) {
-            if (len == 1) _periph->CR1 &= ~I2C_CR1_ACK;
+            if (data.size() == 1) _periph->CR1 &= ~I2C_CR1_ACK;
             else _periph->CR1 |= I2C_CR1_ACK;
 
             generateStart();
             if (sendAddress(addr, true)) {
-                ok = true;
-                for (size_t i = 0; i < len; ++i) {
-                    if (i == len - 1) {
+                result = Status::Ok;
+                for (size_t i = 0; i < data.size(); ++i) {
+                    if (i == data.size() - 1) {
                         _periph->CR1 &= ~I2C_CR1_ACK;
                         generateStop();
                     }
                     if (!waitFlag(_periph->SR1, I2C_SR1_RXNE, true)) {
-                        ok = false;
+                        result = Status::Timeout;
                         break;
                     }
                     data[i] = static_cast<uint8_t>(_periph->DR);
                 }
+            } else {
+                result = Status::Nack;
             }
         }
 
-        if (!ok) {
+        if (result != Status::Ok) {
             generateStop();
             busRecovery();
         }
-
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreGive(_mutex);
-#endif
-
-        return ok;
+        unlockBus();
+        return result;
     }
 
-    bool writeReg(uint8_t addr, uint8_t reg, const uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    Status writeReg(uint8_t addr, uint8_t reg, std::span<const uint8_t> data, uint32_t timeoutMs) override {
         (void)timeoutMs;
+        lockBus();
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreTake(_mutex, portMAX_DELAY);
-#endif
-
-        bool ok = false;
-
+        Status result = Status::BusError;
         if (waitBusy()) {
             generateStart();
             if (sendAddress(addr, false)) {
                 if (waitFlag(_periph->SR1, I2C_SR1_TXE, true)) {
                     _periph->DR = reg;
-                    ok = true;
-                    for (size_t i = 0; i < len; ++i) {
+                    result = Status::Ok;
+                    for (auto byte : data) {
                         if (!waitFlag(_periph->SR1, I2C_SR1_TXE, true)) {
-                            ok = false;
+                            result = Status::Timeout;
                             break;
                         }
-                        _periph->DR = data[i];
+                        _periph->DR = byte;
                     }
-                    if (ok) waitFlag(_periph->SR1, I2C_SR1_BTF, true);
+                    if (result == Status::Ok) waitFlag(_periph->SR1, I2C_SR1_BTF, true);
+                } else {
+                    result = Status::Timeout;
                 }
                 generateStop();
+            } else {
+                result = Status::Nack;
             }
         }
 
-        if (!ok) busRecovery();
-
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreGive(_mutex);
-#endif
-
-        return ok;
+        if (result != Status::Ok) busRecovery();
+        unlockBus();
+        return result;
     }
 
-    bool readReg(uint8_t addr, uint8_t reg, uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    Status readReg(uint8_t addr, uint8_t reg, std::span<uint8_t> data, uint32_t timeoutMs) override {
         (void)timeoutMs;
+        lockBus();
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreTake(_mutex, portMAX_DELAY);
-#endif
-
-        bool ok = false;
-
+        Status result = Status::BusError;
         if (waitBusy()) {
             generateStart();
             if (sendAddress(addr, false)) {
@@ -233,59 +226,57 @@ public:
                     _periph->DR = reg;
                     waitFlag(_periph->SR1, I2C_SR1_BTF, true);
 
-                    if (len == 1) _periph->CR1 &= ~I2C_CR1_ACK;
+                    if (data.size() == 1) _periph->CR1 &= ~I2C_CR1_ACK;
                     else _periph->CR1 |= I2C_CR1_ACK;
 
                     generateStart();
                     if (sendAddress(addr, true)) {
-                        ok = true;
-                        for (size_t i = 0; i < len; ++i) {
-                            if (i == len - 1) {
+                        result = Status::Ok;
+                        for (size_t i = 0; i < data.size(); ++i) {
+                            if (i == data.size() - 1) {
                                 _periph->CR1 &= ~I2C_CR1_ACK;
                                 generateStop();
                             }
                             if (!waitFlag(_periph->SR1, I2C_SR1_RXNE, true)) {
-                                ok = false;
+                                result = Status::Timeout;
                                 break;
                             }
                             data[i] = static_cast<uint8_t>(_periph->DR);
                         }
+                    } else {
+                        result = Status::Nack;
                     }
+                } else {
+                    result = Status::Timeout;
                 }
+            } else {
+                result = Status::Nack;
             }
         }
 
-        if (!ok) {
+        if (result != Status::Ok) {
             generateStop();
             busRecovery();
         }
-
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreGive(_mutex);
-#endif
-
-        return ok;
+        unlockBus();
+        return result;
     }
 
-    bool probe(uint8_t addr, uint32_t timeoutMs) override {
+    Status probe(uint8_t addr, uint32_t timeoutMs) override {
         (void)timeoutMs;
+        lockBus();
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreTake(_mutex, portMAX_DELAY);
-#endif
-
-        bool found = false;
+        Status result = Status::Nack;
         if (waitBusy()) {
             generateStart();
-            found = sendAddress(addr, false);
+            if (sendAddress(addr, false)) result = Status::Ok;
             generateStop();
+        } else {
+            result = Status::Busy;
         }
 
-#ifdef STM32_USE_FREERTOS
-        xSemaphoreGive(_mutex);
-#endif
-
-        return found;
+        unlockBus();
+        return result;
     }
 };
 

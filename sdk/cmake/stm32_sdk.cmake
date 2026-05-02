@@ -55,7 +55,7 @@ target_compile_options(stm32_core INTERFACE
     -fsigned-char
     -fno-move-loop-invariants
     $<$<COMPILE_LANGUAGE:C>:-std=gnu11>
-    $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++17>
+    $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++20>
 )
 
 target_compile_definitions(stm32_core INTERFACE

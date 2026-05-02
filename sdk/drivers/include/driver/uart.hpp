@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
+#include "driver/types.hpp"
+#include <span>
 
 namespace driver {
 
@@ -16,14 +16,14 @@ class IUart {
 public:
     virtual ~IUart() = default;
 
-    virtual bool init(const UartConfig& cfg) = 0;
+    virtual Status init(const UartConfig& cfg) = 0;
     virtual void deinit() = 0;
 
-    virtual size_t write(const uint8_t* data, size_t len, uint32_t timeoutMs = 0xFFFFFFFF) = 0;
-    virtual size_t read(uint8_t* data, size_t len, uint32_t timeoutMs = 0xFFFFFFFF) = 0;
+    virtual size_t write(std::span<const uint8_t> data, uint32_t timeoutMs = 0xFFFFFFFF) = 0;
+    virtual size_t read(std::span<uint8_t> data, uint32_t timeoutMs = 0xFFFFFFFF) = 0;
 
-    virtual size_t writeNonBlocking(const uint8_t* data, size_t len) = 0;
-    virtual size_t readNonBlocking(uint8_t* data, size_t len) = 0;
+    virtual size_t writeNonBlocking(std::span<const uint8_t> data) = 0;
+    virtual size_t readNonBlocking(std::span<uint8_t> data) = 0;
 
     virtual size_t rxAvailable() const = 0;
     virtual size_t txFree() const = 0;
