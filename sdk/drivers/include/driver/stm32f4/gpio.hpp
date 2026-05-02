@@ -1,8 +1,9 @@
 #pragma once
 
 #include "cmsis/stm32f4xx.h"
-#include "driver/gpio.hpp"
-#include "driver/reg.hpp"
+
+import driver.gpio;
+import driver.reg;
 
 namespace driver
 {

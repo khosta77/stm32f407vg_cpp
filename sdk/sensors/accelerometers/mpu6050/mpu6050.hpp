@@ -1,7 +1,11 @@
 #pragma once
 
-#include "driver/i2c.hpp"
-#include "sensor/imu.hpp"
+#include <cstdint>
+#include <span>
+
+import sensor.imu;
+import driver.i2c;
+import driver.types;
 
 namespace sensor
 {

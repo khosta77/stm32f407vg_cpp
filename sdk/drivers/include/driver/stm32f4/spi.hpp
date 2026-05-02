@@ -1,9 +1,11 @@
 #pragma once
 
 #include "cmsis/stm32f4xx.h"
-#include "driver/reg.hpp"
-#include "driver/spi.hpp"
 #include "driver/stm32f4/clock.hpp"
+#include <span>
+
+import driver.spi;
+import driver.reg;
 
 #ifdef STM32_USE_FREERTOS
 #include "FreeRTOS.h"
