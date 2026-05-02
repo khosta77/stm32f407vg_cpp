@@ -48,6 +48,7 @@ target_include_directories(stm32_core INTERFACE
 
 target_compile_options(stm32_core INTERFACE
     ${STM32_ARCH_FLAGS}
+    -Os
     -ffreestanding
     -ffunction-sections
     -fdata-sections
