@@ -1,9 +1,12 @@
 #include "cmsis/stm32f4xx.h"
 #include "driver/stm32f4/i2c.hpp"
 #include "driver/stm32f4/uart.hpp"
-#include "mpu6050.hpp"
 #include "rtos/rtos.hpp"
 #include "sensor/cached_sensor.hpp"
+
+import sensor.imu;
+import sensor.mpu6050;
+import driver.types;
 
 #include <cstddef>
 #include <cstdint>

@@ -3,6 +3,7 @@
 #include "cmsis/stm32f4xx.h"
 #include <span>
 
+import driver.types;
 import driver.flash;
 import driver.reg;
 
