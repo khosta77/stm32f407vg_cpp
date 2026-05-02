@@ -4,6 +4,7 @@
 #include "driver/stm32f4/clock.hpp"
 #include <span>
 
+import driver.types;
 import driver.spi;
 import driver.reg;
 
