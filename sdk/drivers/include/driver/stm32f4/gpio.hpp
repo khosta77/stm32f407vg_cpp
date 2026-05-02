@@ -1,3 +1,5 @@
+#pragma once
+
 #include "driver/gpio.hpp"
 #include "cmsis/stm32f4xx.h"
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "driver/flash.hpp"
 #include "cmsis/stm32f4xx.h"
 
@@ -31,15 +33,15 @@ class InternalFlash : public IFlash {
     }
 
 public:
-    bool read(uint32_t addr, uint8_t* data, size_t len) override {
+    Status read(uint32_t addr, std::span<uint8_t> data) override {
         const auto* src = reinterpret_cast<const uint8_t*>(addr);
-        for (size_t i = 0; i < len; ++i) {
+        for (size_t i = 0; i < data.size(); ++i) {
             data[i] = src[i];
         }
-        return true;
+        return Status::Ok;
     }
 
-    bool write(uint32_t addr, const uint8_t* data, size_t len) override {
+    Status write(uint32_t addr, std::span<const uint8_t> data) override {
         unlock();
         clearErrors();
 
@@ -47,21 +49,21 @@ public:
         FLASH->CR |= FLASH_CR_PG;
 
         auto* dst = reinterpret_cast<volatile uint8_t*>(addr);
-        for (size_t i = 0; i < len; ++i) {
+        for (size_t i = 0; i < data.size(); ++i) {
             dst[i] = data[i];
             if (!waitComplete()) {
                 FLASH->CR &= ~FLASH_CR_PG;
                 lock();
-                return false;
+                return Status::HardwareError;
             }
         }
 
         FLASH->CR &= ~FLASH_CR_PG;
         lock();
-        return true;
+        return Status::Ok;
     }
 
-    bool eraseSector(uint8_t sector) override {
+    Status eraseSector(uint8_t sector) override {
         unlock();
         clearErrors();
 
@@ -75,7 +77,7 @@ public:
 
         FLASH->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB_Msk);
         lock();
-        return ok;
+        return ok ? Status::Ok : Status::HardwareError;
     }
 
     size_t sectorSize(uint8_t sector) const override {

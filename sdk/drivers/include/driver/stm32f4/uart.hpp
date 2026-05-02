@@ -1,3 +1,5 @@
+#pragma once
+
 #include "driver/uart.hpp"
 #include "driver/circular_buffer.hpp"
 #include "cmsis/stm32f4xx.h"
@@ -27,7 +29,7 @@ public:
     Uart(USART_TypeDef* periph, IRQn_Type irqn)
         : _periph(periph), _irqn(irqn) {}
 
-    bool init(const UartConfig& cfg) override {
+    Status init(const UartConfig& cfg) override {
         uint32_t pclk;
         if (_periph == USART1 || _periph == USART6) {
             pclk = SystemCoreClock / 2;
@@ -69,7 +71,7 @@ public:
 #endif
 
         _initialized = true;
-        return true;
+        return Status::Ok;
     }
 
     void deinit() override {
@@ -88,12 +90,12 @@ public:
         _initialized = false;
     }
 
-    size_t write(const uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    size_t write(std::span<const uint8_t> data, uint32_t timeoutMs = 0xFFFFFFFF) override {
 #ifdef STM32_USE_FREERTOS
         xSemaphoreTake(_mutex, portMAX_DELAY);
 #endif
         size_t sent = 0;
-        while (sent < len) {
+        while (sent < data.size()) {
             if (_txBuf.push(data[sent])) {
                 _periph->CR1 |= USART_CR1_TXEIE;
                 ++sent;
@@ -102,6 +104,7 @@ public:
                 _periph->CR1 |= USART_CR1_TXEIE;
                 if (!xSemaphoreTake(_txSem, pdMS_TO_TICKS(timeoutMs))) break;
 #else
+                (void)timeoutMs;
                 while (_txBuf.full()) {}
 #endif
             }
@@ -112,9 +115,9 @@ public:
         return sent;
     }
 
-    size_t read(uint8_t* data, size_t len, uint32_t timeoutMs) override {
+    size_t read(std::span<uint8_t> data, uint32_t timeoutMs = 0xFFFFFFFF) override {
         size_t received = 0;
-        while (received < len) {
+        while (received < data.size()) {
             uint8_t byte;
             if (_rxBuf.pop(byte)) {
                 data[received++] = byte;
@@ -122,6 +125,7 @@ public:
 #ifdef STM32_USE_FREERTOS
                 if (!xSemaphoreTake(_rxSem, pdMS_TO_TICKS(timeoutMs))) break;
 #else
+                (void)timeoutMs;
                 if (received > 0) break;
                 while (_rxBuf.empty()) {}
 #endif
@@ -130,14 +134,14 @@ public:
         return received;
     }
 
-    size_t writeNonBlocking(const uint8_t* data, size_t len) override {
-        size_t written = _txBuf.write(data, len);
+    size_t writeNonBlocking(std::span<const uint8_t> data) override {
+        size_t written = _txBuf.write(data.data(), data.size());
         if (written > 0) _periph->CR1 |= USART_CR1_TXEIE;
         return written;
     }
 
-    size_t readNonBlocking(uint8_t* data, size_t len) override {
-        return _rxBuf.read(data, len);
+    size_t readNonBlocking(std::span<uint8_t> data) override {
+        return _rxBuf.read(data.data(), data.size());
     }
 
     size_t rxAvailable() const override { return _rxBuf.size(); }
