@@ -1,12 +1,14 @@
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 
-namespace driver {
+namespace driver
+{
 
-enum class Status : uint8_t {
+enum class Status : uint8_t
+{
     Ok,
     Timeout,
     Nack,
