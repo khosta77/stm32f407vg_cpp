@@ -1,0 +1,26 @@
+#pragma once
+
+#include "cmsis/stm32f4xx.h"
+#include <cstdint>
+
+namespace driver
+{
+namespace stm32f4
+{
+
+inline uint32_t getApb1Clock()
+{
+    uint32_t ppre1 = ( RCC->CFGR >> RCC_CFGR_PPRE1_Pos ) & 0x7U;
+    uint32_t div = ( ppre1 < 4U ) ? 1U : ( 2U << ( ppre1 - 4U ) );
+    return SystemCoreClock / div;
+}
+
+inline uint32_t getApb2Clock()
+{
+    uint32_t ppre2 = ( RCC->CFGR >> RCC_CFGR_PPRE2_Pos ) & 0x7U;
+    uint32_t div = ( ppre2 < 4U ) ? 1U : ( 2U << ( ppre2 - 4U ) );
+    return SystemCoreClock / div;
+}
+
+} // namespace stm32f4
+} // namespace driver
