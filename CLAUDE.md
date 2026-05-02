@@ -16,16 +16,22 @@ stmtool flash
 
 - Только CMSIS, HAL/LL запрещены
 - Прямой доступ к регистрам: `GPIOD->MODER`, `RCC->AHB1ENR`
-- C++17 (gnu++17), C11 (gnu11)
+- C++20 (gnu++20), C11 (gnu11)
 - cxx.cpp компилируется с gnu++11 (совместимость с newlib)
 - Conventional Commits для всех коммитов
+- Битовые операции с регистрами через `driver::reg::set/clear/modify` (не прямые `|=`, `&= ~`)
+- Не использовать сырые указатели на MMIO-периферию -- использовать ссылки (`GPIO_TypeDef&`)
+- Allman brace style, пробелы внутри скобок: `f( a, b )`, однострочный if всегда в `{}`
 
 ## Структура
 
 - `sdk/core/` -- ARM CMSIS core, Cortex-M runtime, newlib, linker scripts
 - `sdk/hal/stm32f4/` -- STM32F4 device headers, vector tables, memory layout
 - `sdk/cmake/` -- stm32_sdk.cmake, stm32_toolchain.cmake, families/
-- `templates/` -- project templates (blink, etc.)
+- `sdk/rtos/` -- FreeRTOS integration, FreeRTOSConfig.h, RAII wrappers (rtos.hpp)
+- `sdk/drivers/` -- driver interfaces (.cppm modules) + stm32f4 implementations (.hpp)
+- `sdk/sensors/` -- sensor interfaces (.cppm) + implementations (mpu6050)
+- `templates/` -- project templates (bare-metal/blink, freertos/blink, freertos/mpu6050-uart)
 - `tools/stmtool/` -- Python CLI tool (Typer + Rich)
 - `docker/` -- Dockerfiles for build environment
 
