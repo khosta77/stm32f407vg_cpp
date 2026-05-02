@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 
 set(STM32_SDK "${CMAKE_CURRENT_SOURCE_DIR}/stm32-sdk/sdk" CACHE PATH "Path to STM32 SDK")
 
@@ -18,14 +18,7 @@ add_executable(${PROJECT_NAME}.elf
 )
 
 target_compile_options(${PROJECT_NAME}.elf PRIVATE
-    -g3
     -fmessage-length=0
-)
-
-target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
-    DEBUG
-    TRACE
-    OS_USE_TRACE_SEMIHOSTING_STDOUT
 )
 
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE
