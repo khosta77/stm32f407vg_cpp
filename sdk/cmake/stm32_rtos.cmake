@@ -26,7 +26,7 @@ add_library(stm32_rtos STATIC
     ${freertos_kernel_SOURCE_DIR}/event_groups.c
     ${freertos_kernel_SOURCE_DIR}/stream_buffer.c
     ${_FREERTOS_PORT_DIR}/port.c
-    ${freertos_kernel_SOURCE_DIR}/portable/MemMang/heap_5.c
+    ${freertos_kernel_SOURCE_DIR}/portable/MemMang/heap_4.c
     ${_STM32_SDK_DIR}/rtos/src/freertos_hooks.c
 )
 
@@ -59,4 +59,8 @@ target_compile_definitions(stm32_rtos PRIVATE
 
 target_compile_definitions(stm32_rtos PUBLIC
     STM32_USE_FREERTOS
+)
+
+target_link_options(stm32_rtos PUBLIC
+    -Wl,--whole-archive $<TARGET_FILE:stm32_rtos> -Wl,--no-whole-archive
 )
