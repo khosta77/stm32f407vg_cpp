@@ -1,10 +1,12 @@
 #pragma once
 
 #include "cmsis/stm32f4xx.h"
-#include "driver/circular_buffer.hpp"
-#include "driver/reg.hpp"
 #include "driver/stm32f4/clock.hpp"
-#include "driver/uart.hpp"
+#include <span>
+
+import driver.uart;
+import driver.reg;
+import driver.circular_buffer;
 
 #ifdef STM32_USE_FREERTOS
 #include "FreeRTOS.h"

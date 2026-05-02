@@ -1,7 +1,8 @@
 #pragma once
 
-#include "driver/types.hpp"
 #include <cstdint>
+
+import driver.types;
 
 namespace sensor
 {

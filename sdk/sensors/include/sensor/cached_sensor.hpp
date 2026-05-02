@@ -3,9 +3,10 @@
 #ifdef STM32_USE_FREERTOS
 
 #include "FreeRTOS.h"
-#include "driver/types.hpp"
 #include "semphr.h"
 #include "task.h"
+
+import driver.types;
 
 namespace sensor
 {

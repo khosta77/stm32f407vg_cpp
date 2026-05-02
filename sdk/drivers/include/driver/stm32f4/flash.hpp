@@ -1,8 +1,10 @@
 #pragma once
 
 #include "cmsis/stm32f4xx.h"
-#include "driver/flash.hpp"
-#include "driver/reg.hpp"
+#include <span>
+
+import driver.flash;
+import driver.reg;
 
 namespace driver
 {
