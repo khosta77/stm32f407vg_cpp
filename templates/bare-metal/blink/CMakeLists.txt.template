@@ -13,111 +13,29 @@ project(@PROJECT_NAME@ LANGUAGES C CXX)
 set(STM32_CHIP "@STM32_CHIP@" CACHE STRING "Target STM32 chip")
 include(${STM32_SDK}/cmake/stm32_sdk.cmake)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
-configure_file(
-    ${STM32_SDK}/hal/stm32f4/ldscripts/mem.ld.in
-    ${CMAKE_CURRENT_BINARY_DIR}/ldscripts/mem.ld
-    @ONLY
-)
-
-set(APP_SOURCES
+add_executable(${PROJECT_NAME}.elf
     src/main.cpp
 )
 
-set(CMSIS_SOURCES
-    ${STM32_SDK}/hal/stm32f4/src/cmsis/system_stm32f4xx.c
-    ${STM32_SDK}/hal/stm32f4/src/cmsis/${STM32_VECTORS_FILE}
-)
-
-set(CORTEXM_SOURCES
-    ${STM32_SDK}/core/src/cortexm/exception-handlers.c
-    ${STM32_SDK}/core/src/cortexm/initialize-hardware.c
-    ${STM32_SDK}/core/src/cortexm/reset-hardware.c
-)
-
-set(DIAG_SOURCES
-    ${STM32_SDK}/core/src/diag/trace-impl.c
-    ${STM32_SDK}/core/src/diag/trace.c
-)
-
-set(NEWLIB_C_SOURCES
-    ${STM32_SDK}/core/src/newlib/assert.c
-    ${STM32_SDK}/core/src/newlib/exit.c
-    ${STM32_SDK}/core/src/newlib/sbrk.c
-    ${STM32_SDK}/core/src/newlib/startup.c
-    ${STM32_SDK}/core/src/newlib/syscalls.c
-)
-
-set(NEWLIB_CXX_SOURCES
-    ${STM32_SDK}/core/src/newlib/cxx.cpp
-)
-
-add_executable(${PROJECT_NAME}.elf
-    ${APP_SOURCES}
-    ${CMSIS_SOURCES}
-    ${CORTEXM_SOURCES}
-    ${DIAG_SOURCES}
-    ${NEWLIB_C_SOURCES}
-    ${NEWLIB_CXX_SOURCES}
-)
-
 target_compile_options(${PROJECT_NAME}.elf PRIVATE
-    ${STM32_ARCH_FLAGS}
     -O0
-    -fmessage-length=0
-    -fsigned-char
-    -ffunction-sections
-    -fdata-sections
-    -ffreestanding
-    -fno-move-loop-invariants
     -g3
-    $<$<COMPILE_LANGUAGE:C>:-std=gnu11>
-    $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++17>
+    -fmessage-length=0
 )
 
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
     DEBUG
     TRACE
     OS_USE_TRACE_SEMIHOSTING_STDOUT
-    ${STM32_DEFINE}
-    HSE_VALUE=8000000
 )
 
-target_include_directories(${PROJECT_NAME}.elf PRIVATE
-    ${STM32_SDK}/core/include
-    ${STM32_SDK}/core/include/cmsis
-    ${STM32_SDK}/hal/stm32f4/include
-    ${STM32_SDK}/hal/stm32f4/include/cmsis
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE
+    stm32_core
+    stm32_hal
+    stm32_link
 )
-
-set_source_files_properties(
-    ${STM32_SDK}/hal/stm32f4/src/cmsis/system_stm32f4xx.c
-    PROPERTIES COMPILE_OPTIONS "-Wno-padded"
-)
-
-set_source_files_properties(
-    ${STM32_SDK}/core/src/newlib/startup.c
-    PROPERTIES COMPILE_DEFINITIONS "OS_INCLUDE_STARTUP_INIT_MULTIPLE_RAM_SECTIONS"
-)
-
-set_source_files_properties(
-    ${STM32_SDK}/core/src/newlib/cxx.cpp
-    PROPERTIES COMPILE_OPTIONS
-        "-std=gnu++11;-fabi-version=0;-fno-exceptions;-fno-rtti;-fno-use-cxa-atexit;-fno-threadsafe-statics"
-)
-
-set(LINKER_SCRIPT_DIR_GEN ${CMAKE_CURRENT_BINARY_DIR}/ldscripts)
-set(LINKER_SCRIPT_DIR_SRC ${STM32_SDK}/core/ldscripts)
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE
-    ${STM32_ARCH_FLAGS}
-    -T${LINKER_SCRIPT_DIR_GEN}/mem.ld
-    -T${LINKER_SCRIPT_DIR_SRC}/libs.ld
-    -T${LINKER_SCRIPT_DIR_SRC}/sections.ld
-    --specs=nano.specs
-    -Xlinker --gc-sections
-    -Wl,--no-warn-rwx-segments
-    -Wl,--print-memory-usage
     -Wl,-Map,${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.map
 )
 
