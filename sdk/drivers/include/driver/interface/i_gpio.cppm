@@ -6,13 +6,33 @@ import driver.types;
 
 export namespace driver {
 
-enum class PinMode : uint8_t { None = 0xFF, Input = 0, Output = 1, AlternateFunction = 2, Analog = 3 };
+enum class PinMode : uint8_t {
+    None = 0xFF,
+    Input = 0,
+    Output = 1,
+    AlternateFunction = 2,
+    Analog = 3
+};
 
-enum class PullMode : uint8_t { None = 0, PullUp = 1, PullDown = 2 };
+enum class PullMode : uint8_t {
+    None = 0,
+    PullUp = 1,
+    PullDown = 2
+};
 
-enum class OutputSpeed : uint8_t { None = 0xFF, Low = 0, Medium = 1, High = 2, VeryHigh = 3 };
+enum class OutputSpeed : uint8_t {
+    None = 0xFF,
+    Low = 0,
+    Medium = 1,
+    High = 2,
+    VeryHigh = 3
+};
 
-enum class OutputType : uint8_t { None = 0xFF, PushPull = 0, OpenDrain = 1 };
+enum class OutputType : uint8_t {
+    None = 0xFF,
+    PushPull = 0,
+    OpenDrain = 1
+};
 
 struct GpioConfig {
     uint8_t pin;
