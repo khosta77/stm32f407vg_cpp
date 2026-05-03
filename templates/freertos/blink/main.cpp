@@ -1,43 +1,64 @@
 #include "cmsis/stm32f4xx.h"
 #include "rtos/rtos.hpp"
 
-constexpr uint32_t LED_GREEN = GPIO_ODR_OD12;
-constexpr uint32_t LED_ORANGE = GPIO_ODR_OD13;
-constexpr uint32_t LED_RED = GPIO_ODR_OD14;
-constexpr uint32_t LED_BLUE = GPIO_ODR_OD15;
+import driver.gpio;
+import driver.stm32f4.gpio;
 
-static void taskGreenOrange( void * )
+using driver::GpioConfig;
+using driver::OutputSpeed;
+using driver::OutputType;
+using driver::PinMode;
+using driver::PullMode;
+using driver::stm32f4::GpioPin;
+
+namespace
+{
+
+GpioPin *g_ledGreen;
+GpioPin *g_ledRed;
+GpioPin *g_ledBlue;
+
+void taskGreen( void * )
 {
     while ( true )
     {
-        GPIOD->BSRR = LED_GREEN;
-        rtos::Task::delay( pdMS_TO_TICKS( 500 ) );
-        GPIOD->BSRR = LED_GREEN << 16;
+        g_ledGreen->toggle();
         rtos::Task::delay( pdMS_TO_TICKS( 500 ) );
     }
 }
 
-static void taskRedBlue( void * )
+void taskRedBlue( void * )
 {
     while ( true )
     {
-        GPIOD->BSRR = LED_RED;
+        g_ledRed->set();
         rtos::Task::delay( pdMS_TO_TICKS( 250 ) );
-        GPIOD->BSRR = LED_RED << 16;
-        GPIOD->BSRR = LED_BLUE;
+        g_ledRed->reset();
+        g_ledBlue->set();
         rtos::Task::delay( pdMS_TO_TICKS( 250 ) );
-        GPIOD->BSRR = LED_BLUE << 16;
+        g_ledBlue->reset();
     }
 }
+
+} // namespace
 
 int main()
 {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
     __DSB();
 
-    GPIOD->MODER |= GPIO_MODER_MODER12_0 | GPIO_MODER_MODER13_0 | GPIO_MODER_MODER14_0 | GPIO_MODER_MODER15_0;
+    static GpioPin ledGreen{ *GPIOD,
+        { 12, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull } };
+    static GpioPin ledRed{ *GPIOD,
+        { 14, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull } };
+    static GpioPin ledBlue{ *GPIOD,
+        { 15, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull } };
 
-    rtos::Task green( "green", 128, 1, taskGreenOrange );
+    g_ledGreen = &ledGreen;
+    g_ledRed = &ledRed;
+    g_ledBlue = &ledBlue;
+
+    rtos::Task green( "green", 128, 1, taskGreen );
     rtos::Task red( "red", 128, 1, taskRedBlue );
 
     rtos::Task::startScheduler();
