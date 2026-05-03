@@ -28,13 +28,30 @@ if ! check_cmd pipx; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-SPEC="stmtool @ git+${REPO}#subdirectory=${TOOL_PATH}"
+EXISTING=$(which stmtool 2>/dev/null || true)
+if [ -n "$EXISTING" ] && [[ "$EXISTING" != *".local/bin"* ]] && [[ "$EXISTING" != *"pipx"* ]]; then
+    echo "Warning: found stmtool at $EXISTING (not managed by pipx)"
+    echo "Remove it first: pipx uninstall stmtool"
+    echo "Then re-run this script."
+    exit 1
+fi
 
-if check_cmd stmtool; then
-    echo "Reinstalling stmtool (latest from git)..."
+LATEST_TAG=$(git ls-remote --tags --sort=-v:refname "$REPO" "v*" | head -1 | sed 's|.*refs/tags/||')
+
+if [ -z "$LATEST_TAG" ]; then
+    echo "Error: no release tags found in $REPO"
+    exit 1
+fi
+
+echo "Latest release: $LATEST_TAG"
+
+SPEC="stmtool @ git+${REPO}@${LATEST_TAG}#subdirectory=${TOOL_PATH}"
+
+if pipx list 2>/dev/null | grep -q stmtool; then
+    echo "Reinstalling stmtool ($LATEST_TAG)..."
     pipx install --force "$SPEC"
 else
-    echo "Installing stmtool..."
+    echo "Installing stmtool ($LATEST_TAG)..."
     pipx install "$SPEC"
 fi
 
