@@ -30,11 +30,17 @@ fi
 
 EXISTING=$(which stmtool 2>/dev/null || true)
 if [ -n "$EXISTING" ] && [[ "$EXISTING" != *".local/bin"* ]] && [[ "$EXISTING" != *"pipx"* ]]; then
-    echo "Warning: found stmtool at $EXISTING (not managed by pipx)"
-    echo "Remove it first: pipx uninstall stmtool"
-    echo "Then re-run this script."
-    exit 1
+    echo "Removing old stmtool at $EXISTING..."
+    pip3 uninstall -y stmtool 2>/dev/null || rm -f "$EXISTING"
 fi
+
+if pipx list 2>/dev/null | grep -q stmtool; then
+    echo "Removing previous pipx installation..."
+    pipx uninstall stmtool
+fi
+
+echo "Clearing SDK cache..."
+rm -rf "$HOME/.stmtool/stm32-sdk"
 
 LATEST_TAG=$(git ls-remote --tags --sort=-v:refname "$REPO" "v*" | head -1 | sed 's|.*refs/tags/||')
 
@@ -47,13 +53,8 @@ echo "Latest release: $LATEST_TAG"
 
 SPEC="stmtool @ git+${REPO}@${LATEST_TAG}#subdirectory=${TOOL_PATH}"
 
-if pipx list 2>/dev/null | grep -q stmtool; then
-    echo "Reinstalling stmtool ($LATEST_TAG)..."
-    pipx install --force "$SPEC"
-else
-    echo "Installing stmtool ($LATEST_TAG)..."
-    pipx install "$SPEC"
-fi
+echo "Installing stmtool ($LATEST_TAG)..."
+pipx install "$SPEC"
 
 SHELL_NAME=$(basename "$SHELL")
 COMPLETION_MARKER="# stmtool completion"
