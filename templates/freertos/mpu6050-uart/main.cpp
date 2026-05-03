@@ -30,9 +30,10 @@ namespace
 
 driver::stm32f4::I2c::Config i2cCfg { .clockSpeed = 400000, .fastMode = true };
 driver::stm32f4::Uart::Config uartCfg { .baudrate = 115200 };
+sensor::Mpu6050::Config mpuCfg {};
 
 driver::stm32f4::I2c g_i2c1( *I2C1, i2cCfg );
-sensor::Mpu6050 g_mpu( g_i2c1 );
+sensor::Mpu6050 g_mpu( g_i2c1, mpuCfg );
 driver::stm32f4::Uart g_uart2( *USART2, USART2_IRQn, uartCfg );
 
 driver::Status readImu( sensor::ImuData &out, void *ctx )

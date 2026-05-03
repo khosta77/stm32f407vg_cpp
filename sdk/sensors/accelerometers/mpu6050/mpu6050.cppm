@@ -1,40 +1,54 @@
 module;
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 export module sensor.mpu6050;
 
-import sensor.imu;
-import driver.types;
 import driver.i2c;
+import driver.types;
+import sensor.imu;
 
 export namespace sensor
 {
 
 class Mpu6050 : public IImu
 {
+public:
+    struct Config
+    {
+        uint8_t addr = 0x68;
+        uint8_t accelRange = 2;
+        uint16_t gyroRange = 250;
+        uint8_t sampleRateDiv = 7;
+        uint8_t dlpfMode = 6;
+    };
+
+private:
+    struct Regs
+    {
+        static constexpr uint8_t SMPLRT_DIV = 0x19;
+        static constexpr uint8_t CONFIG = 0x1A;
+        static constexpr uint8_t GYRO_CONFIG = 0x1B;
+        static constexpr uint8_t ACCEL_CONFIG = 0x1C;
+        static constexpr uint8_t ACCEL_XOUT_H = 0x3B;
+        static constexpr uint8_t GYRO_XOUT_H = 0x43;
+        static constexpr uint8_t PWR_MGMT_1 = 0x6B;
+        static constexpr uint8_t WHO_AM_I = 0x75;
+    };
+
     driver::II2c &_i2c;
-    uint8_t _addr;
+    Config _cfg;
     float _accelScale = 16384.0f;
     float _gyroScale = 131.0f;
 
-    static constexpr uint8_t REG_SMPLRT_DIV = 0x19;
-    static constexpr uint8_t REG_CONFIG = 0x1A;
-    static constexpr uint8_t REG_GYRO_CONFIG = 0x1B;
-    static constexpr uint8_t REG_ACCEL_CONFIG = 0x1C;
-    static constexpr uint8_t REG_ACCEL_XOUT_H = 0x3B;
-    static constexpr uint8_t REG_GYRO_XOUT_H = 0x43;
-    static constexpr uint8_t REG_PWR_MGMT_1 = 0x6B;
-    static constexpr uint8_t REG_WHO_AM_I = 0x75;
-
     driver::Status writeReg( uint8_t reg, uint8_t val )
     {
-        return _i2c.writeReg( _addr, reg, std::span<const uint8_t>( &val, 1 ) );
+        return _i2c.writeReg( _cfg.addr, reg, std::span<const uint8_t>( &val, 1 ) );
     }
 
     driver::Status readRegs( uint8_t reg, uint8_t *buf, size_t len )
     {
-        return _i2c.readReg( _addr, reg, std::span<uint8_t>( buf, len ) );
+        return _i2c.readReg( _cfg.addr, reg, std::span<uint8_t>( buf, len ) );
     }
 
     static int16_t combine( uint8_t hi, uint8_t lo )
@@ -43,14 +57,14 @@ class Mpu6050 : public IImu
     }
 
 public:
-    explicit Mpu6050( driver::II2c &i2c, uint8_t addr = 0x68 )
-        : _i2c( i2c ), _addr( addr ) {}
+    explicit Mpu6050( driver::II2c &i2c, const Config &cfg )
+        : _i2c( i2c ), _cfg( cfg ) {}
 
     driver::Status init() override
     {
         driver::Status st;
 
-        st = writeReg( REG_PWR_MGMT_1, 0x80 );
+        st = writeReg( Regs::PWR_MGMT_1, 0x80 );
         if ( st != driver::Status::Ok )
         {
             return st;
@@ -61,29 +75,29 @@ public:
             __asm volatile( "nop" );
         }
 
-        st = writeReg( REG_PWR_MGMT_1, 0x01 );
+        st = writeReg( Regs::PWR_MGMT_1, 0x01 );
         if ( st != driver::Status::Ok )
         {
             return st;
         }
 
-        st = writeReg( REG_SMPLRT_DIV, 0x07 );
+        st = writeReg( Regs::SMPLRT_DIV, _cfg.sampleRateDiv );
         if ( st != driver::Status::Ok )
         {
             return st;
         }
 
-        st = writeReg( REG_CONFIG, 0x06 );
+        st = writeReg( Regs::CONFIG, _cfg.dlpfMode );
         if ( st != driver::Status::Ok )
         {
             return st;
         }
 
-        setAccelRange( 2 );
-        setGyroRange( 250 );
+        setAccelRange( _cfg.accelRange );
+        setGyroRange( _cfg.gyroRange );
 
         uint8_t whoami = 0;
-        st = readRegs( REG_WHO_AM_I, &whoami, 1 );
+        st = readRegs( Regs::WHO_AM_I, &whoami, 1 );
         if ( st != driver::Status::Ok )
         {
             return st;
@@ -95,7 +109,7 @@ public:
     driver::Status read( ImuData &out ) override
     {
         uint8_t buf[14];
-        driver::Status st = readRegs( REG_ACCEL_XOUT_H, buf, 14 );
+        driver::Status st = readRegs( Regs::ACCEL_XOUT_H, buf, 14 );
         if ( st != driver::Status::Ok )
         {
             return st;
@@ -118,7 +132,7 @@ public:
     driver::Status selfTest() override
     {
         uint8_t whoami = 0;
-        driver::Status st = readRegs( REG_WHO_AM_I, &whoami, 1 );
+        driver::Status st = readRegs( Regs::WHO_AM_I, &whoami, 1 );
         if ( st != driver::Status::Ok )
         {
             return st;
@@ -148,7 +162,7 @@ public:
                 _accelScale = 16384.0f;
                 break;
         }
-        writeReg( REG_ACCEL_CONFIG, val );
+        writeReg( Regs::ACCEL_CONFIG, val );
     }
 
     void setGyroRange( uint16_t dps ) override
@@ -173,7 +187,7 @@ public:
                 _gyroScale = 131.0f;
                 break;
         }
-        writeReg( REG_GYRO_CONFIG, val );
+        writeReg( Regs::GYRO_CONFIG, val );
     }
 };
 
