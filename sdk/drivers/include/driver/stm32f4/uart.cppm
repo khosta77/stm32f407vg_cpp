@@ -15,6 +15,26 @@ import driver.reg;
 import driver.circular_buffer;
 import driver.stm32f4.clock;
 
+namespace driver::stm32f4::detail
+{
+
+void nvicSetPriority( IRQn_Type irq, uint32_t prio )
+{
+    NVIC_SetPriority( irq, prio );
+}
+
+void nvicEnableIRQ( IRQn_Type irq )
+{
+    NVIC_EnableIRQ( irq );
+}
+
+void nvicDisableIRQ( IRQn_Type irq )
+{
+    NVIC_DisableIRQ( irq );
+}
+
+} // namespace driver::stm32f4::detail
+
 export namespace driver
 {
 namespace stm32f4
@@ -92,8 +112,8 @@ public:
         cr1 |= USART_CR1_RXNEIE;
         reg::write( _periph.CR1, cr1 );
 
-        NVIC_SetPriority( _irqn, 6 );
-        NVIC_EnableIRQ( _irqn );
+        detail::nvicSetPriority( _irqn, 6 );
+        detail::nvicEnableIRQ( _irqn );
 
 #ifdef STM32_USE_FREERTOS
         _rxSem = xSemaphoreCreateBinary();
@@ -108,7 +128,7 @@ public:
 
     ~Uart()
     {
-        NVIC_DisableIRQ( _irqn );
+        detail::nvicDisableIRQ( _irqn );
         reg::write( _periph.CR1, 0 );
 
 #ifdef STM32_USE_FREERTOS
