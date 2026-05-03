@@ -22,5 +22,10 @@ inline uint32_t getApb2Clock()
     return SystemCoreClock / div;
 }
 
+inline uint32_t getTimeoutLoops()
+{
+    return SystemCoreClock / 10;
+}
+
 } // namespace stm32f4
 } // namespace driver

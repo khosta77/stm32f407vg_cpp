@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cmsis/stm32f4xx.h"
+#include "driver/stm32f4/clock.hpp"
 #include <span>
 
 import driver.types;
@@ -16,7 +17,6 @@ class InternalFlash : public IFlash
 {
     static constexpr uint32_t FLASH_KEY1 = 0x45670123;
     static constexpr uint32_t FLASH_KEY2 = 0xCDEF89AB;
-    static constexpr uint32_t TIMEOUT_LOOPS = 1000000;
     static constexpr uint32_t ERROR_MASK =
         FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR;
 
@@ -35,7 +35,7 @@ class InternalFlash : public IFlash
 
     Status waitComplete() const
     {
-        for ( uint32_t i = 0; i < TIMEOUT_LOOPS; ++i )
+        for ( uint32_t i = 0, n = getTimeoutLoops(); i < n; ++i )
         {
             if ( !reg::read( FLASH->SR, FLASH_SR_BSY ) )
             {

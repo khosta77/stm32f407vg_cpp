@@ -35,11 +35,9 @@ private:
     SemaphoreHandle_t _mutex = nullptr;
 #endif
 
-    static constexpr uint32_t TIMEOUT_LOOPS = 100000;
-
     bool waitFlag( volatile uint32_t &reg, uint32_t flag, bool set ) const
     {
-        for ( uint32_t i = 0; i < TIMEOUT_LOOPS; ++i )
+        for ( uint32_t i = 0, n = getTimeoutLoops(); i < n; ++i )
         {
             if ( set )
             {
