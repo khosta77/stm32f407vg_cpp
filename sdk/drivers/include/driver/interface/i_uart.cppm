@@ -9,6 +9,13 @@ import driver.types;
 export namespace driver
 {
 
+enum class Parity : uint8_t
+{
+    None,
+    Even,
+    Odd
+};
+
 class IUart
 {
 public:

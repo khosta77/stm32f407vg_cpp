@@ -23,8 +23,8 @@ class I2c : public II2c
 public:
     struct Config
     {
-        uint32_t clockSpeed = 100000;
-        bool fastMode = false;
+        uint32_t clockSpeed;
+        bool fastMode;
     };
 
 private:
