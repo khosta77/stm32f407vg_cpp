@@ -27,20 +27,20 @@
 
 // ----------------------------------------------------------------------------
 
-#include "diag/trace.h"
 #include <stdlib.h>
+#include "diag/trace.h"
 
 // ----------------------------------------------------------------------------
 
-#if !defined( DEBUG )
-extern void __attribute__( ( noreturn ) ) __reset_hardware( void );
+#if !defined(DEBUG)
+extern void __attribute__((noreturn)) __reset_hardware(void);
 #endif
 
 // ----------------------------------------------------------------------------
 
 // Forward declaration
 
-void _exit( int code );
+void _exit(int code);
 
 // ----------------------------------------------------------------------------
 
@@ -51,23 +51,22 @@ void _exit( int code );
 // It can be redefined in the application, if more functionality
 // is required.
 
-void __attribute__( ( weak ) ) _exit( int code __attribute__( ( unused ) ) )
-{
-#if !defined( DEBUG )
+void __attribute__((weak)) _exit(int code __attribute__((unused))) {
+#if !defined(DEBUG)
     __reset_hardware();
 #endif
 
     // TODO: write on trace
-    while ( 1 );
+    while (1)
+        ;
 }
 
 // ----------------------------------------------------------------------------
 
-void __attribute__( ( weak, noreturn ) ) abort( void )
-{
-    trace_puts( "abort(), exiting..." );
+void __attribute__((weak, noreturn)) abort(void) {
+    trace_puts("abort(), exiting...");
 
-    _exit( 1 );
+    _exit(1);
 }
 
 // ----------------------------------------------------------------------------

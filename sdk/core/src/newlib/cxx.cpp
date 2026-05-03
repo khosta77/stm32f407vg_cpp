@@ -32,32 +32,28 @@
 
 // ----------------------------------------------------------------------------
 
-#include "diag/trace.h"
 #include <stdlib.h>
 #include <sys/types.h>
+#include "diag/trace.h"
 
 // ----------------------------------------------------------------------------
 
-namespace __gnu_cxx
-{
-void __attribute__( ( noreturn ) ) __verbose_terminate_handler();
+namespace __gnu_cxx {
+void __attribute__((noreturn)) __verbose_terminate_handler();
 
-void __verbose_terminate_handler()
-{
-    trace_puts( __func__ );
+void __verbose_terminate_handler() {
+    trace_puts(__func__);
     abort();
 }
-} // namespace __gnu_cxx
+}  // namespace __gnu_cxx
 
 // ----------------------------------------------------------------------------
 
-extern "C"
-{
-void __attribute__( ( noreturn ) ) __cxa_pure_virtual();
+extern "C" {
+void __attribute__((noreturn)) __cxa_pure_virtual();
 
-void __cxa_pure_virtual()
-{
-    trace_puts( __func__ );
+void __cxa_pure_virtual() {
+    trace_puts(__func__);
     abort();
 }
 }

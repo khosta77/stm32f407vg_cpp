@@ -31,13 +31,13 @@
 
 // ----------------------------------------------------------------------------
 
-extern void __attribute__( ( noreturn ) ) NVIC_SystemReset( void );
+extern void __attribute__((noreturn)) NVIC_SystemReset(void);
 
 // ----------------------------------------------------------------------------
 
 // Forward declarations
 
-void __reset_hardware( void );
+void __reset_hardware(void);
 
 // ----------------------------------------------------------------------------
 
@@ -46,6 +46,8 @@ void __reset_hardware( void );
 //
 // Called from _exit().
 
-void __attribute__( ( weak, noreturn ) ) __reset_hardware() { NVIC_SystemReset(); }
+void __attribute__((weak, noreturn)) __reset_hardware() {
+    NVIC_SystemReset();
+}
 
 // ----------------------------------------------------------------------------

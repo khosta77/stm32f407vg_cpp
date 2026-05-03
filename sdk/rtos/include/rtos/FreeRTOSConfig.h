@@ -15,19 +15,19 @@ extern uint32_t SystemCoreClock;
 #define configPRIO_BITS 4
 #endif
 
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY ( ( 1U << configPRIO_BITS ) - 1 )
+#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY ((1U << configPRIO_BITS) - 1)
 #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5
-#define configKERNEL_INTERRUPT_PRIORITY ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << ( 8 - configPRIO_BITS ) )
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY                                                                 \
-    ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << ( 8 - configPRIO_BITS ) )
+#define configKERNEL_INTERRUPT_PRIORITY (configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY \
+    (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
 #define configUSE_PREEMPTION 1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 #define configUSE_TICKLESS_IDLE 0
-#define configCPU_CLOCK_HZ ( SystemCoreClock )
-#define configTICK_RATE_HZ ( (TickType_t) 1000 )
+#define configCPU_CLOCK_HZ (SystemCoreClock)
+#define configTICK_RATE_HZ ((TickType_t) 1000)
 #define configMAX_PRIORITIES 5
-#define configMINIMAL_STACK_SIZE ( (uint16_t) 128 )
+#define configMINIMAL_STACK_SIZE ((uint16_t) 128)
 #define configMAX_TASK_NAME_LEN 16
 #define configUSE_16_BIT_TICKS 0
 #define configIDLE_SHOULD_YIELD 1
@@ -41,7 +41,7 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_STATIC_ALLOCATION 1
 #define configSUPPORT_DYNAMIC_ALLOCATION 1
 #define configAPPLICATION_ALLOCATED_HEAP 0
-#define configTOTAL_HEAP_SIZE ( (size_t) ( 16 * 1024 ) )
+#define configTOTAL_HEAP_SIZE ((size_t) (16 * 1024))
 
 #define configUSE_IDLE_HOOK 0
 #define configUSE_TICK_HOOK 0
@@ -57,19 +57,16 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TIMERS 1
 #define configTIMER_TASK_PRIORITY 2
 #define configTIMER_QUEUE_LENGTH 10
-#define configTIMER_TASK_STACK_DEPTH ( configMINIMAL_STACK_SIZE * 2 )
+#define configTIMER_TASK_STACK_DEPTH (configMINIMAL_STACK_SIZE * 2)
 
-#define configASSERT( x )                                                                                    \
-    do                                                                                                       \
-    {                                                                                                        \
-        if ( ( x ) == 0 )                                                                                    \
-        {                                                                                                    \
-            __asm volatile( "cpsid i" ::: "memory" );                                                        \
-            for ( ;; )                                                                                       \
-            {                                                                                                \
-            }                                                                                                \
-        }                                                                                                    \
-    } while ( 0 )
+#define configASSERT(x)                             \
+    do {                                            \
+        if ((x) == 0) {                             \
+            __asm volatile("cpsid i" ::: "memory"); \
+            for (;;) {                              \
+            }                                       \
+        }                                           \
+    } while (0)
 
 #define INCLUDE_vTaskPrioritySet 1
 #define INCLUDE_uxTaskPriorityGet 1
