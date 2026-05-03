@@ -26,8 +26,6 @@ target_include_directories(stm32_drivers PUBLIC
     ${_STM32_SDK_DIR}/core/include/cmsis
 )
 
-target_link_libraries(stm32_drivers PRIVATE stm32_hal stm32_core)
-
 target_compile_features(stm32_drivers PUBLIC cxx_std_20)
 
 target_compile_options(stm32_drivers PRIVATE

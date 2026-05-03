@@ -1,6 +1,9 @@
 #include "cmsis/stm32f4xx.h"
 #include "rtos/rtos.hpp"
 #include "sensor/cached_sensor.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <span>
 
 import driver.types;
 import driver.gpio;
@@ -10,10 +13,6 @@ import driver.stm32f4.i2c;
 import driver.stm32f4.uart;
 import sensor.imu;
 import sensor.mpu6050;
-
-#include <cstddef>
-#include <cstdint>
-#include <span>
 
 extern "C"
 {
