@@ -1,0 +1,5 @@
+[template]
+name = "mpu6050-uart"
+description = "MPU6050 IMU sensor with UART output and LED tilt indication"
+category = "freertos"
+families = ["stm32f4"]

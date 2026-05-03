@@ -1,0 +1,5 @@
+[template]
+name = "freertos-blink"
+description = "FreeRTOS LED blink with tasks"
+category = "freertos"
+families = ["*"]
