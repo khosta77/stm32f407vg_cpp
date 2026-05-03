@@ -1,19 +1,20 @@
-#pragma once
-
+module;
 #include "cmsis/stm32f4xx.h"
-#include "driver/stm32f4/clock.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <span>
-
-import driver.types;
-import driver.spi;
-import driver.reg;
-
 #ifdef STM32_USE_FREERTOS
 #include "FreeRTOS.h"
 #include "semphr.h"
 #endif
+export module driver.stm32f4.spi;
 
-namespace driver
+import driver.types;
+import driver.spi;
+import driver.reg;
+import driver.stm32f4.clock;
+
+export namespace driver
 {
 namespace stm32f4
 {

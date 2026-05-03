@@ -1,12 +1,13 @@
-#pragma once
-
+module;
 #include "cmsis/stm32f4xx.h"
+#include <cstdint>
+export module driver.stm32f4.gpio;
 
 import driver.gpio;
 import driver.types;
 import driver.reg;
 
-namespace driver
+export namespace driver
 {
 namespace stm32f4
 {

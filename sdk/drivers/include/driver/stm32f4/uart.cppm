@@ -1,20 +1,21 @@
-#pragma once
-
+module;
 #include "cmsis/stm32f4xx.h"
-#include "driver/stm32f4/clock.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <span>
+#ifdef STM32_USE_FREERTOS
+#include "FreeRTOS.h"
+#include "semphr.h"
+#endif
+export module driver.stm32f4.uart;
 
 import driver.types;
 import driver.uart;
 import driver.reg;
 import driver.circular_buffer;
+import driver.stm32f4.clock;
 
-#ifdef STM32_USE_FREERTOS
-#include "FreeRTOS.h"
-#include "semphr.h"
-#endif
-
-namespace driver
+export namespace driver
 {
 namespace stm32f4
 {
@@ -214,7 +215,9 @@ public:
     void irqHandler() override
     {
         uint32_t sr = reg::get( _periph.SR );
+#ifdef STM32_USE_FREERTOS
         BaseType_t woken = pdFALSE;
+#endif
 
         if ( sr & USART_SR_RXNE )
         {

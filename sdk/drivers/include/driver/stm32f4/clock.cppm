@@ -1,9 +1,9 @@
-#pragma once
-
+module;
 #include "cmsis/stm32f4xx.h"
 #include <cstdint>
+export module driver.stm32f4.clock;
 
-namespace driver
+export namespace driver
 {
 namespace stm32f4
 {
