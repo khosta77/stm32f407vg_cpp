@@ -52,11 +52,15 @@ void taskView( void *param )
     while ( true )
     {
         auto data = cached->get();
-        int len = snprintf( buf, sizeof( buf ), "A: %.2f %.2f %.2f G: %.1f %.1f %.1f T: %.1f\r\n",
-                            static_cast<double>( data.accel.x ), static_cast<double>( data.accel.y ),
-                            static_cast<double>( data.accel.z ), static_cast<double>( data.gyro.x ),
-                            static_cast<double>( data.gyro.y ), static_cast<double>( data.gyro.z ),
-                            static_cast<double>( data.temp ) );
+        int ax = static_cast<int>( data.accel.x * 100 );
+        int ay = static_cast<int>( data.accel.y * 100 );
+        int az = static_cast<int>( data.accel.z * 100 );
+        int gx = static_cast<int>( data.gyro.x * 10 );
+        int gy = static_cast<int>( data.gyro.y * 10 );
+        int gz = static_cast<int>( data.gyro.z * 10 );
+        int t = static_cast<int>( data.temp * 10 );
+        int len = snprintf( buf, sizeof( buf ), "A:%d %d %d G:%d %d %d T:%d\r\n",
+                            ax, ay, az, gx, gy, gz, t );
         if ( len > 0 )
         {
             g_uart2->write( { reinterpret_cast<const uint8_t *>( buf ),
@@ -141,16 +145,19 @@ int main()
     g_ledBlue = &ledBlue;
 
     static I2c i2c1{ *I2C1, { .clockSpeed = 400000, .fastMode = true } };
+
+    __disable_irq();
     static Uart<> uart2{ *USART2, USART2_IRQn, { .baudrate = 115200, .dataBits = 8, .stopBits = 1, .parity = Parity::None } };
     g_uart2 = &uart2;
+    __enable_irq();
 
     static sensor::Mpu6050 mpu{ i2c1, { .addr = 0x68, .accelRange = 2, .gyroRange = 250, .sampleRateDiv = 7, .dlpfMode = 6 } };
     mpu.init();
 
-    sensor::CachedSensor<sensor::ImuData> cachedImu( 10, readImu, &mpu, "imu", 256, 2 );
+    static sensor::CachedSensor<sensor::ImuData> cachedImu( 10, readImu, &mpu, "imu", 256, 2 );
 
-    rtos::Task view( "view", 512, 1, taskView, &cachedImu );
-    rtos::Task led( "led", 256, 1, taskLed, &cachedImu );
+    static rtos::Task view( "view", 384, 1, taskView, &cachedImu );
+    static rtos::Task led( "led", 256, 1, taskLed, &cachedImu );
 
     rtos::Task::startScheduler();
 
