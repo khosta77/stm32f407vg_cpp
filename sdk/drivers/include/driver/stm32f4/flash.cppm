@@ -1,14 +1,16 @@
-#pragma once
-
+module;
 #include "cmsis/stm32f4xx.h"
-#include "driver/stm32f4/clock.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <span>
+export module driver.stm32f4.flash;
 
 import driver.types;
 import driver.flash;
 import driver.reg;
+import driver.stm32f4.clock;
 
-namespace driver
+export namespace driver
 {
 namespace stm32f4
 {
@@ -47,12 +49,14 @@ class InternalFlash : public IFlash
 
     void clearErrors() { reg::write( FLASH->SR, ERROR_MASK | FLASH_SR_EOP ); }
 
-    template <typename T> static const T *memoryAt( uint32_t addr )
+    template <typename T>
+    static const T *memoryAt( uint32_t addr )
     {
         return reinterpret_cast<const T *>( addr );
     }
 
-    template <typename T> static volatile T *volatileAt( uint32_t addr )
+    template <typename T>
+    static volatile T *volatileAt( uint32_t addr )
     {
         return reinterpret_cast<volatile T *>( addr );
     }

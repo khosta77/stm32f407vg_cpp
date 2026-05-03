@@ -10,11 +10,19 @@ target_sources(stm32_drivers PUBLIC
         ${_STM32_SDK_DIR}/drivers/include/driver/interface/i_i2c.cppm
         ${_STM32_SDK_DIR}/drivers/include/driver/interface/i_spi.cppm
         ${_STM32_SDK_DIR}/drivers/include/driver/interface/i_flash.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/clock.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/gpio.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/i2c.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/spi.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/flash.cppm
+        ${_STM32_SDK_DIR}/drivers/include/driver/stm32f4/uart.cppm
 )
 
 target_include_directories(stm32_drivers PUBLIC
     ${_STM32_SDK_DIR}/drivers/include
 )
+
+target_link_libraries(stm32_drivers PUBLIC stm32_hal stm32_core)
 
 target_compile_features(stm32_drivers PUBLIC cxx_std_20)
 
@@ -31,5 +39,6 @@ target_compile_definitions(stm32_drivers PRIVATE
 )
 
 if(STM32_USE_FREERTOS)
+    target_link_libraries(stm32_drivers PUBLIC stm32_rtos)
     target_compile_definitions(stm32_drivers PUBLIC STM32_USE_FREERTOS)
 endif()
