@@ -35,4 +35,14 @@ inline void modify( volatile uint32_t &reg, uint32_t clrMask, uint32_t setMask )
     reg = ( reg & ~clrMask ) | setMask;
 }
 
+inline uint32_t positionVal( uint32_t val )
+{
+    uint32_t pos = 0;
+    while ( pos < 32 && !( val & ( 1U << pos ) ) )
+    {
+        ++pos;
+    }
+    return pos;
+}
+
 } // namespace driver::reg
