@@ -9,51 +9,78 @@ export namespace driver
 
 enum class PinMode : uint8_t
 {
-    Input,
-    Output,
-    AlternateFunction,
-    Analog
+    None = 0xFF,
+    Input = 0,
+    Output = 1,
+    AlternateFunction = 2,
+    Analog = 3
 };
 
 enum class PullMode : uint8_t
 {
-    None,
-    PullUp,
-    PullDown
+    None = 0,
+    PullUp = 1,
+    PullDown = 2
 };
 
 enum class OutputSpeed : uint8_t
 {
-    Low,
-    Medium,
-    High,
-    VeryHigh
+    None = 0xFF,
+    Low = 0,
+    Medium = 1,
+    High = 2,
+    VeryHigh = 3
 };
 
 enum class OutputType : uint8_t
 {
-    PushPull,
-    OpenDrain
+    None = 0xFF,
+    PushPull = 0,
+    OpenDrain = 1
 };
 
 struct GpioConfig
 {
-    PinMode mode = PinMode::Input;
-    PullMode pull = PullMode::None;
-    OutputSpeed speed = OutputSpeed::Low;
-    OutputType type = OutputType::PushPull;
-    uint8_t af = 0;
+    uint8_t pin;
+    PinMode mode;
+    PullMode pull;
+    OutputSpeed speed;
+    OutputType type;
+    uint8_t af;
+
+    consteval GpioConfig( uint8_t p, PinMode m, PullMode pu,
+                          OutputSpeed s, OutputType t, uint8_t a = 0 )
+        : pin( p ), mode( m ), pull( pu ), speed( s ), type( t ), af( a )
+    {
+        if ( p > 15 )
+        {
+            throw "pin must be 0-15";
+        }
+        if ( m == PinMode::None )
+        {
+            throw "PinMode must not be None";
+        }
+        if ( ( m == PinMode::Output || m == PinMode::AlternateFunction )
+             && s == OutputSpeed::None )
+        {
+            throw "OutputSpeed required for Output/AF";
+        }
+        if ( ( m == PinMode::Output || m == PinMode::AlternateFunction )
+             && t == OutputType::None )
+        {
+            throw "OutputType required for Output/AF";
+        }
+    }
 };
 
-class IGpio
+class IGpioPin
 {
 public:
-    virtual ~IGpio() = default;
-    virtual void configure( uint8_t pin, const GpioConfig &cfg ) = 0;
-    virtual void set( uint8_t pin ) = 0;
-    virtual void reset( uint8_t pin ) = 0;
-    virtual void toggle( uint8_t pin ) = 0;
-    virtual Status read( uint8_t pin, bool &value ) = 0;
+    virtual ~IGpioPin() = default;
+    virtual void set() = 0;
+    virtual void reset() = 0;
+    virtual void toggle() = 0;
+    virtual Status read() = 0;
 };
 
 } // namespace driver

@@ -9,6 +9,7 @@ export namespace driver
 enum class Status : uint8_t
 {
     Ok,
+    None,
     Timeout,
     Nack,
     BusError,
