@@ -58,8 +58,8 @@ int main()
     g_ledRed = &ledRed;
     g_ledBlue = &ledBlue;
 
-    rtos::Task green( "green", 128, 1, taskGreen );
-    rtos::Task red( "red", 128, 1, taskRedBlue );
+    static rtos::Task green( "green", 128, 1, taskGreen );
+    static rtos::Task red( "red", 128, 1, taskRedBlue );
 
     rtos::Task::startScheduler();
 
