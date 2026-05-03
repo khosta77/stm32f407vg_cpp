@@ -95,6 +95,7 @@ add_library(stm32_link INTERFACE)
 
 target_link_options(stm32_link INTERFACE
     ${STM32_ARCH_FLAGS}
+    -nostartfiles
     -T${CMAKE_CURRENT_BINARY_DIR}/ldscripts/mem.ld
     -T${_STM32_SDK_DIR}/core/ldscripts/libs.ld
     -T${_STM32_SDK_DIR}/core/ldscripts/sections.ld
