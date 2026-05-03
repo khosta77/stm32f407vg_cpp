@@ -1,7 +1,9 @@
 add_library(stm32_sensors OBJECT)
 
 target_sources(stm32_sensors PUBLIC
-    FILE_SET CXX_MODULES FILES
+    FILE_SET CXX_MODULES
+    BASE_DIRS ${_STM32_SDK_DIR}
+    FILES
         ${_STM32_SDK_DIR}/sensors/include/sensor/imu.cppm
         ${_STM32_SDK_DIR}/sensors/accelerometers/mpu6050/mpu6050.cppm
 )

@@ -98,6 +98,31 @@ def resolve_sdk_root(version: str = "develop") -> Path:
     return _SDK_CACHE_DIR
 
 
+def list_templates(sdk_root: Path) -> list[dict]:
+    templates_dir = sdk_root / "templates"
+    result: list[dict] = []
+
+    for category_dir in sorted(templates_dir.iterdir()):
+        if not category_dir.is_dir():
+            continue
+        for tpl_dir in sorted(category_dir.iterdir()):
+            if not tpl_dir.is_dir():
+                continue
+            meta_path = tpl_dir / "template.toml"
+            if not meta_path.exists():
+                continue
+            with open(meta_path, "rb") as f:
+                meta = tomllib.load(f)
+            tpl = meta.get("template", {})
+            result.append({
+                "name": tpl.get("name", ""),
+                "description": tpl.get("description", ""),
+                "category": tpl.get("category", ""),
+            })
+
+    return result
+
+
 def discover_template(sdk_root: Path, template_name: str) -> Path:
     templates_dir = sdk_root / "templates"
     available: list[str] = []

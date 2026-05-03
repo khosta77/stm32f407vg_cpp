@@ -1,7 +1,9 @@
 add_library(stm32_drivers OBJECT)
 
 target_sources(stm32_drivers PUBLIC
-    FILE_SET CXX_MODULES FILES
+    FILE_SET CXX_MODULES
+    BASE_DIRS ${_STM32_SDK_DIR}
+    FILES
         ${_STM32_SDK_DIR}/drivers/include/driver/types.cppm
         ${_STM32_SDK_DIR}/drivers/include/driver/reg.cppm
         ${_STM32_SDK_DIR}/drivers/include/driver/circular_buffer.cppm

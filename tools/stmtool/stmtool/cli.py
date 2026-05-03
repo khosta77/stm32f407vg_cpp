@@ -10,7 +10,7 @@ from stmtool import __version__
 from stmtool.config import load_config
 from stmtool.i18n import t
 from stmtool.completions import complete_chip, complete_flash_tool, complete_template
-from stmtool.project import create_project, resolve_sdk_root
+from stmtool.project import create_project, list_templates, resolve_sdk_root
 
 app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
 project_app = typer.Typer(help=t("project_help"))
@@ -34,6 +34,30 @@ def project_create(
     except (RuntimeError, ValueError, FileExistsError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(code=1)
+
+
+@project_app.command("templates", help="Show available project templates")
+def project_templates() -> None:
+    try:
+        sdk_root = resolve_sdk_root()
+    except RuntimeError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
+
+    templates = list_templates(sdk_root)
+    if not templates:
+        console.print("[yellow]No templates found[/yellow]")
+        raise typer.Exit(code=1)
+
+    table = Table(title="Available templates")
+    table.add_column("Name", style="bold")
+    table.add_column("Category")
+    table.add_column("Description")
+
+    for tpl in templates:
+        table.add_row(tpl["name"], tpl["category"], tpl["description"])
+
+    console.print(table)
 
 
 @app.command(help=t("build_help"))
@@ -71,7 +95,7 @@ def build(
     verbose_flag = "--verbose" if verbose else ""
 
     if native:
-        cmd = f"cmake -B build -DSTM32_CHIP={target_chip} -DSTM32_SDK={sdk_path} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
+        cmd = f"cmake -G Ninja -B build -DSTM32_CHIP={target_chip} -DSTM32_SDK={sdk_path} -DCMAKE_BUILD_TYPE={build_type} && cmake --build build {verbose_flag}"
         mode = t("mode_local")
         console.print(f"[bold green]{t('building', chip=target_chip, build_type=build_type, mode=mode)}[/bold green]")
         result = subprocess.run(cmd, shell=True)
