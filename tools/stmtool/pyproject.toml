@@ -1,6 +1,6 @@
 [project]
 name = "stmtool"
-version = "0.1.1"
+dynamic = ["version"]
 description = "CLI tool for STM32-SDK bare-metal projects"
 requires-python = ">=3.10"
 dependencies = [
@@ -13,5 +13,9 @@ dependencies = [
 stmtool = "stmtool.cli:app"
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = "../.."
+version_file = "stmtool/_version.py"

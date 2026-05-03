@@ -40,7 +40,7 @@ def _clone_sdk_cache() -> Path:
     print(t("sdk_cloning"), file=sys.stderr)
     _SDK_CACHE_DIR.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
-        ["git", "clone", "--depth", "1", _DEFAULT_REPO, str(_SDK_CACHE_DIR)],
+        ["git", "clone", _DEFAULT_REPO, str(_SDK_CACHE_DIR)],
         capture_output=True,
         text=True,
     )
@@ -49,7 +49,33 @@ def _clone_sdk_cache() -> Path:
     return _SDK_CACHE_DIR
 
 
-def resolve_sdk_root() -> Path:
+def _checkout_version(repo_dir: Path, version: str) -> None:
+    if version == "develop":
+        subprocess.run(
+            ["git", "-C", str(repo_dir), "fetch", "origin", "develop"],
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repo_dir), "checkout", "develop"],
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repo_dir), "pull", "--ff-only"],
+            capture_output=True,
+        )
+    else:
+        tag = f"v{version}"
+        subprocess.run(
+            ["git", "-C", str(repo_dir), "fetch", "origin", "tag", tag],
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(repo_dir), "checkout", tag],
+            capture_output=True,
+        )
+
+
+def resolve_sdk_root(version: str = "develop") -> Path:
     import os
 
     env_path = os.environ.get("STMSDK_PATH")
@@ -64,9 +90,12 @@ def resolve_sdk_root() -> Path:
             return parent
 
     if _is_sdk_root(_SDK_CACHE_DIR):
+        _checkout_version(_SDK_CACHE_DIR, version)
         return _SDK_CACHE_DIR
 
-    return _clone_sdk_cache()
+    _clone_sdk_cache()
+    _checkout_version(_SDK_CACHE_DIR, version)
+    return _SDK_CACHE_DIR
 
 
 def discover_template(sdk_root: Path, template_name: str) -> Path:

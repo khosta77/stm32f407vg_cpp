@@ -2,6 +2,9 @@
 name = "@PROJECT_NAME@"
 version = "0.1.0"
 
+[sdk]
+version = "develop"
+
 [target]
 chip = "@STM32_CHIP@"
 

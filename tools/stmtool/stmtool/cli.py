@@ -53,8 +53,10 @@ def build(
         console.print(f"[yellow]{t('cleaning')}[/yellow]")
         shutil.rmtree("build", ignore_errors=True)
 
+    sdk_version = config.get("sdk", {}).get("version", "develop")
+
     try:
-        sdk_root = resolve_sdk_root()
+        sdk_root = resolve_sdk_root(version=sdk_version)
         sdk_path = sdk_root / "sdk"
     except RuntimeError as e:
         console.print(f"[red]{e}[/red]")
