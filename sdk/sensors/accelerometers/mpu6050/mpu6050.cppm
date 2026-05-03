@@ -16,11 +16,11 @@ class Mpu6050 : public IImu
 public:
     struct Config
     {
-        uint8_t addr = 0x68;
-        uint8_t accelRange = 2;
-        uint16_t gyroRange = 250;
-        uint8_t sampleRateDiv = 7;
-        uint8_t dlpfMode = 6;
+        uint8_t addr;
+        uint8_t accelRange;
+        uint16_t gyroRange;
+        uint8_t sampleRateDiv;
+        uint8_t dlpfMode;
     };
 
 private:

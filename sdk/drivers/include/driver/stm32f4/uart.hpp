@@ -19,27 +19,28 @@ namespace driver
 namespace stm32f4
 {
 
+template <size_t RxBufSize = 256, size_t TxBufSize = 256>
 class Uart : public IUart
 {
+    static_assert( ( RxBufSize & ( RxBufSize - 1 ) ) == 0, "RxBufSize must be power of 2" );
+    static_assert( ( TxBufSize & ( TxBufSize - 1 ) ) == 0, "TxBufSize must be power of 2" );
+    static_assert( RxBufSize >= 16, "RxBufSize too small" );
+    static_assert( TxBufSize >= 16, "TxBufSize too small" );
+
 public:
     struct Config
     {
-        uint32_t baudrate = 115200;
-        uint8_t dataBits = 8;
-        uint8_t stopBits = 1;
-        enum class Parity : uint8_t
-        {
-            None,
-            Even,
-            Odd
-        } parity = Parity::None;
+        uint32_t baudrate;
+        uint8_t dataBits;
+        uint8_t stopBits;
+        Parity parity;
     };
 
 private:
     USART_TypeDef &_periph;
     IRQn_Type const _irqn;
-    CircularBuffer<uint8_t, 256> _rxBuf;
-    CircularBuffer<uint8_t, 256> _txBuf;
+    CircularBuffer<uint8_t, RxBufSize> _rxBuf;
+    CircularBuffer<uint8_t, TxBufSize> _txBuf;
 
 #ifdef STM32_USE_FREERTOS
     SemaphoreHandle_t _rxSem = nullptr;
@@ -73,11 +74,11 @@ public:
             cr1 |= USART_CR1_M;
         }
 
-        if ( cfg.parity == Config::Parity::Even )
+        if ( cfg.parity == Parity::Even )
         {
             cr1 |= USART_CR1_PCE;
         }
-        else if ( cfg.parity == Config::Parity::Odd )
+        else if ( cfg.parity == Parity::Odd )
         {
             cr1 |= USART_CR1_PCE | USART_CR1_PS;
         }

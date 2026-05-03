@@ -23,10 +23,10 @@ class Spi : public ISpi
 public:
     struct Config
     {
-        uint32_t clockHz = 1000000;
-        uint8_t mode = 0;
-        bool lsbFirst = false;
-        uint8_t dataSize = 8;
+        uint32_t clockHz;
+        uint8_t mode;
+        bool lsbFirst;
+        uint8_t dataSize;
     };
 
 private:

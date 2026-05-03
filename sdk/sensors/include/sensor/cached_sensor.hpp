@@ -11,7 +11,8 @@ import driver.types;
 namespace sensor
 {
 
-template <typename DataType> class CachedSensor
+template <typename DataType>
+class CachedSensor
 {
     DataType _cached {};
     mutable SemaphoreHandle_t _mutex;
