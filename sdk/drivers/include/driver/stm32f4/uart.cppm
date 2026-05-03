@@ -18,6 +18,11 @@ import driver.stm32f4.clock;
 namespace driver::stm32f4::detail
 {
 
+void dsb()
+{
+    __DSB();
+}
+
 void nvicSetPriority( IRQn_Type irq, uint32_t prio )
 {
     NVIC_SetPriority( irq, prio );

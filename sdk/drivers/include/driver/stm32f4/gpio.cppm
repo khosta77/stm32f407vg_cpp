@@ -21,6 +21,28 @@ public:
     GpioPin( GPIO_TypeDef &port, const GpioConfig &cfg )
         : _port( port ), _pin( cfg.pin )
     {
+        if ( &_port == GPIOA )
+        {
+            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+        }
+        else if ( &_port == GPIOB )
+        {
+            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+        }
+        else if ( &_port == GPIOC )
+        {
+            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+        }
+        else if ( &_port == GPIOD )
+        {
+            RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+        }
+        else if ( &_port == GPIOE )
+        {
+            RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
+        }
+        __DSB();
+
         uint32_t pos2 = _pin * 2U;
         reg::modify( _port.MODER, 0x3U << pos2,
                      static_cast<uint32_t>( cfg.mode ) << pos2 );
