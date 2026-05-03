@@ -1,9 +1,6 @@
 #include "cmsis/stm32f4xx.h"
 #include "rtos/rtos.hpp"
 #include "sensor/cached_sensor.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <span>
 
 import driver.types;
 import driver.gpio;
@@ -62,8 +59,8 @@ void taskView( void *param )
                             static_cast<double>( data.temp ) );
         if ( len > 0 )
         {
-            g_uart2->write( std::span<const uint8_t>( reinterpret_cast<const uint8_t *>( buf ),
-                                                       static_cast<size_t>( len ) ) );
+            g_uart2->write( { reinterpret_cast<const uint8_t *>( buf ),
+                             static_cast<size_t>( len ) } );
         }
         rtos::Task::delay( pdMS_TO_TICKS( 100 ) );
     }
