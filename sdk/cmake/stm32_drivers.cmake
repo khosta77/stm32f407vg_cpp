@@ -20,9 +20,13 @@ target_sources(stm32_drivers PUBLIC
 
 target_include_directories(stm32_drivers PUBLIC
     ${_STM32_SDK_DIR}/drivers/include
+    ${STM32_HAL_DIR}/include
+    ${STM32_HAL_DIR}/include/cmsis
+    ${_STM32_SDK_DIR}/core/include
+    ${_STM32_SDK_DIR}/core/include/cmsis
 )
 
-target_link_libraries(stm32_drivers PUBLIC stm32_hal stm32_core)
+target_link_libraries(stm32_drivers PRIVATE stm32_hal stm32_core)
 
 target_compile_features(stm32_drivers PUBLIC cxx_std_20)
 
@@ -39,6 +43,6 @@ target_compile_definitions(stm32_drivers PRIVATE
 )
 
 if(STM32_USE_FREERTOS)
-    target_link_libraries(stm32_drivers PUBLIC stm32_rtos)
+    target_link_libraries(stm32_drivers PRIVATE stm32_rtos)
     target_compile_definitions(stm32_drivers PUBLIC STM32_USE_FREERTOS)
 endif()
