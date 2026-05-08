@@ -1,5 +1,0 @@
-[template]
-name = "i2c-scan"
-description = "Scan I2C1 bus for connected devices and print 7-bit addresses over UART"
-category = "freertos"
-families = ["stm32f4"]

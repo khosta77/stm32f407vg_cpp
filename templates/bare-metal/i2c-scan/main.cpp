@@ -1,13 +1,13 @@
+#include <cstddef>
+#include <cstdint>
 #include "cmsis/stm32f4xx.h"
-#include "rtos/rtos.hpp"
 
 import driver.types;
 import driver.gpio;
 import driver.reg;
-import driver.uart;
+import driver.stm32f4.clock;
 import driver.stm32f4.gpio;
 import driver.stm32f4.i2c;
-import driver.stm32f4.uart;
 
 extern "C" {
 int snprintf(char *str, size_t size, const char *format, ...);
@@ -17,16 +17,14 @@ using driver::gpio;
 using driver::GpioConfig;
 using driver::OutputSpeed;
 using driver::OutputType;
-using driver::Parity;
 using driver::PinMode;
 using driver::PullMode;
 using driver::stm32f4::GpioPin;
 using driver::stm32f4::I2c;
-using driver::stm32f4::Uart;
 
 extern "C" void __initialize_hardware() {
     SystemCoreClockUpdate();
-    driver::reg::set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIODEN);
+    driver::reg::set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN);
     driver::reg::set(RCC->APB1ENR, RCC_APB1ENR_I2C1EN | RCC_APB1ENR_USART2EN);
     __DSB();
 }
@@ -85,35 +83,43 @@ I2c g_i2c1{
         .fastMode = false,
     },
 };
-Uart<> g_uart2{
-    *USART2,
-    USART2_IRQn,
-    {
-        .baudrate = 115200,
-        .dataBits = 8,
-        .stopBits = 1,
-        .parity = Parity::None,
-    },
-};
 
-void writeStr(const char *s) {
-    size_t n = 0;
-    while (s[n] != '\0') {
-        ++n;
-    }
-    g_uart2.write({reinterpret_cast<const uint8_t *>(s), n});
+void uartInit() {
+    const uint32_t pclk = driver::stm32f4::getApb1Clock();
+    driver::reg::write(USART2->BRR, (pclk + 115200U / 2U) / 115200U);
+    driver::reg::write(USART2->CR1, USART_CR1_UE | USART_CR1_TE | USART_CR1_RE);
 }
 
-void taskScan(void *) {
-    rtos::Task::delay(pdMS_TO_TICKS(200));
+void uartPutChar(char c) {
+    while (!driver::reg::read(USART2->SR, USART_SR_TXE)) {
+    }
+    driver::reg::write(USART2->DR, static_cast<uint32_t>(static_cast<uint8_t>(c)));
+}
+
+void uartPutStr(const char *s) {
+    while (*s != '\0') {
+        uartPutChar(*s++);
+    }
+}
+
+void busyDelayLoops(uint32_t loops) {
+    for (uint32_t i = 0; i < loops; ++i) {
+        __asm volatile("nop");
+    }
+}
+
+}  // namespace
+
+int main() {
+    uartInit();
+    char buf[96];
+
     while (true) {
-        writeStr("\r\n=== I2C1 scan (PB6/PB7 @ 100 kHz) ===\r\n");
-        char buf[80];
+        uartPutStr("\r\n=== I2C1 scan (PB6/PB7 @ 100 kHz) ===\r\n");
         size_t found = 0;
         for (uint8_t addr = 0x03; addr <= 0x77; ++addr) {
-            auto st = g_i2c1.probe(addr);
-            if (st == driver::Status::Ok) {
-                int len = snprintf(
+            if (g_i2c1.probe(addr) == driver::Status::Ok) {
+                const int len = snprintf(
                     buf,
                     sizeof(buf),
                     "  found device at 7-bit 0x%02X (8-bit write 0x%02X / read 0x%02X)\r\n",
@@ -121,30 +127,17 @@ void taskScan(void *) {
                     static_cast<unsigned>(addr << 1),
                     static_cast<unsigned>((addr << 1) | 1));
                 if (len > 0) {
-                    g_uart2.write({reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len)});
+                    buf[len] = '\0';
+                    uartPutStr(buf);
                 }
                 ++found;
             }
         }
-        int len = snprintf(buf, sizeof(buf), "scan complete: %u device(s)\r\n", static_cast<unsigned>(found));
+        const int len = snprintf(buf, sizeof(buf), "scan complete: %u device(s)\r\n", static_cast<unsigned>(found));
         if (len > 0) {
-            g_uart2.write({reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len)});
+            buf[len] = '\0';
+            uartPutStr(buf);
         }
-        rtos::Task::delay(pdMS_TO_TICKS(2000));
-    }
-}
-
-}  // namespace
-
-extern "C" void USART2_IRQHandler() {
-    g_uart2.irqHandler();
-}
-
-int main() {
-    static rtos::Task scan("scan", 384, 1, taskScan);
-
-    rtos::Task::startScheduler();
-
-    while (true) {
+        busyDelayLoops(20000000U);
     }
 }
