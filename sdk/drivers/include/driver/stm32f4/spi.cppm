@@ -82,7 +82,13 @@ public:
 
         uint32_t cr1 = SPI_CR1_MSTR | SPI_CR1_SSI | SPI_CR1_SSM;
 
-        uint32_t pclk = getApb2Clock();
+        // SPI1, SPI4, SPI5, SPI6 sit on APB2; SPI2 and SPI3 sit on APB1.
+        uint32_t pclk;
+        if (&_periph == SPI2 || &_periph == SPI3) {
+            pclk = getApb1Clock();
+        } else {
+            pclk = getApb2Clock();
+        }
         uint32_t div = pclk / _cfg.clockHz;
         uint32_t br = 0;
         while ((1U << (br + 1)) < div && br < 7) {
