@@ -104,6 +104,115 @@ private:
 #endif
     }
 
+    void criticalEnter() {
+#ifdef STM32_USE_FREERTOS
+        taskENTER_CRITICAL();
+#else
+        __disable_irq();
+#endif
+    }
+
+    void criticalExit() {
+#ifdef STM32_USE_FREERTOS
+        taskEXIT_CRITICAL();
+#else
+        __enable_irq();
+#endif
+    }
+
+    Status readBytes(uint8_t addr, std::span<uint8_t> data) {
+        const size_t N = data.size();
+        if (N == 0) {
+            generateStop();
+            return Status::Ok;
+        }
+
+        if (N == 1) {
+            reg::clear(_periph.CR1, I2C_CR1_ACK);
+            reg::clear(_periph.CR1, I2C_CR1_POS);
+            generateStart();
+            _periph.DR = static_cast<uint32_t>((addr << 1) | 1);
+            if (!waitFlag(_periph.SR1, I2C_SR1_ADDR, true)) {
+                if (reg::read(_periph.SR1, I2C_SR1_AF)) {
+                    reg::clear(_periph.SR1, I2C_SR1_AF);
+                }
+                return Status::Nack;
+            }
+            criticalEnter();
+            volatile uint32_t sr2 = _periph.SR2;
+            (void) sr2;
+            generateStop();
+            criticalExit();
+            if (!waitFlag(_periph.SR1, I2C_SR1_RXNE, true)) {
+                return Status::Timeout;
+            }
+            data[0] = static_cast<uint8_t>(_periph.DR);
+            return Status::Ok;
+        }
+
+        if (N == 2) {
+            reg::set(_periph.CR1, I2C_CR1_ACK | I2C_CR1_POS);
+            generateStart();
+            _periph.DR = static_cast<uint32_t>((addr << 1) | 1);
+            if (!waitFlag(_periph.SR1, I2C_SR1_ADDR, true)) {
+                if (reg::read(_periph.SR1, I2C_SR1_AF)) {
+                    reg::clear(_periph.SR1, I2C_SR1_AF);
+                }
+                reg::clear(_periph.CR1, I2C_CR1_POS);
+                return Status::Nack;
+            }
+            criticalEnter();
+            volatile uint32_t sr2 = _periph.SR2;
+            (void) sr2;
+            reg::clear(_periph.CR1, I2C_CR1_ACK);
+            criticalExit();
+            if (!waitFlag(_periph.SR1, I2C_SR1_BTF, true)) {
+                reg::clear(_periph.CR1, I2C_CR1_POS);
+                return Status::Timeout;
+            }
+            criticalEnter();
+            generateStop();
+            data[0] = static_cast<uint8_t>(_periph.DR);
+            data[1] = static_cast<uint8_t>(_periph.DR);
+            criticalExit();
+            reg::clear(_periph.CR1, I2C_CR1_POS);
+            return Status::Ok;
+        }
+
+        reg::clear(_periph.CR1, I2C_CR1_POS);
+        reg::set(_periph.CR1, I2C_CR1_ACK);
+        generateStart();
+        if (!sendAddress(addr, true)) {
+            return Status::Nack;
+        }
+        size_t i = 0;
+        while (N - i > 3) {
+            if (!waitFlag(_periph.SR1, I2C_SR1_RXNE, true)) {
+                return Status::Timeout;
+            }
+            data[i++] = static_cast<uint8_t>(_periph.DR);
+        }
+        if (!waitFlag(_periph.SR1, I2C_SR1_BTF, true)) {
+            return Status::Timeout;
+        }
+        criticalEnter();
+        reg::clear(_periph.CR1, I2C_CR1_ACK);
+        data[i++] = static_cast<uint8_t>(_periph.DR);
+        criticalExit();
+        if (!waitFlag(_periph.SR1, I2C_SR1_BTF, true)) {
+            return Status::Timeout;
+        }
+        criticalEnter();
+        generateStop();
+        data[i++] = static_cast<uint8_t>(_periph.DR);
+        criticalExit();
+        if (!waitFlag(_periph.SR1, I2C_SR1_RXNE, true)) {
+            return Status::Timeout;
+        }
+        data[i] = static_cast<uint8_t>(_periph.DR);
+        return Status::Ok;
+    }
+
 public:
     I2c(I2C_TypeDef &periph, const Config &cfg) : _periph(periph), _cfg(cfg) {
         reg::write(_periph.CR1, I2C_CR1_SWRST);
@@ -165,29 +274,7 @@ public:
 
         Status result = Status::BusError;
         if (waitBusy()) {
-            if (data.size() == 1) {
-                reg::clear(_periph.CR1, I2C_CR1_ACK);
-            } else {
-                reg::set(_periph.CR1, I2C_CR1_ACK);
-            }
-
-            generateStart();
-            if (sendAddress(addr, true)) {
-                result = Status::Ok;
-                for (size_t i = 0, I = data.size(); i < I; ++i) {
-                    if (i == I - 1) {
-                        reg::clear(_periph.CR1, I2C_CR1_ACK);
-                        generateStop();
-                    }
-                    if (!waitFlag(_periph.SR1, I2C_SR1_RXNE, true)) {
-                        result = Status::Timeout;
-                        break;
-                    }
-                    data[i] = static_cast<uint8_t>(_periph.DR);
-                }
-            } else {
-                result = Status::Nack;
-            }
+            result = readBytes(addr, data);
         }
 
         if (result != Status::Ok) {
@@ -243,30 +330,10 @@ public:
             if (sendAddress(addr, false)) {
                 if (waitFlag(_periph.SR1, I2C_SR1_TXE, true)) {
                     _periph.DR = reg;
-                    waitFlag(_periph.SR1, I2C_SR1_BTF, true);
-
-                    if (data.size() == 1) {
-                        reg::clear(_periph.CR1, I2C_CR1_ACK);
+                    if (waitFlag(_periph.SR1, I2C_SR1_BTF, true)) {
+                        result = readBytes(addr, data);
                     } else {
-                        reg::set(_periph.CR1, I2C_CR1_ACK);
-                    }
-
-                    generateStart();
-                    if (sendAddress(addr, true)) {
-                        result = Status::Ok;
-                        for (size_t i = 0, I = data.size(); i < I; ++i) {
-                            if (i == I - 1) {
-                                reg::clear(_periph.CR1, I2C_CR1_ACK);
-                                generateStop();
-                            }
-                            if (!waitFlag(_periph.SR1, I2C_SR1_RXNE, true)) {
-                                result = Status::Timeout;
-                                break;
-                            }
-                            data[i] = static_cast<uint8_t>(_periph.DR);
-                        }
-                    } else {
-                        result = Status::Nack;
+                        result = Status::Timeout;
                     }
                 } else {
                     result = Status::Timeout;
