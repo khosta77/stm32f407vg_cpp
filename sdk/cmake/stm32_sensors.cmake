@@ -5,12 +5,19 @@ target_sources(stm32_sensors PUBLIC
     BASE_DIRS ${_STM32_SDK_DIR}
     FILES
         ${_STM32_SDK_DIR}/sensors/include/sensor/imu.cppm
+        ${_STM32_SDK_DIR}/sensors/include/sensor/display.cppm
+        ${_STM32_SDK_DIR}/sensors/include/sensor/external_flash.cppm
         ${_STM32_SDK_DIR}/sensors/accelerometers/mpu6050/mpu6050.cppm
+        ${_STM32_SDK_DIR}/sensors/displays/ssd1306/font5x7.cppm
+        ${_STM32_SDK_DIR}/sensors/displays/ssd1306/ssd1306.cppm
+        ${_STM32_SDK_DIR}/sensors/storage/w25q32/w25q32.cppm
 )
 
 target_include_directories(stm32_sensors PUBLIC
     ${_STM32_SDK_DIR}/sensors/include
     ${_STM32_SDK_DIR}/sensors/accelerometers/mpu6050
+    ${_STM32_SDK_DIR}/sensors/displays/ssd1306
+    ${_STM32_SDK_DIR}/sensors/storage/w25q32
 )
 
 target_compile_features(stm32_sensors PUBLIC cxx_std_20)
