@@ -1,0 +1,5 @@
+[template]
+name = "w25q32-flash-test"
+description = "W25Q32 SPI NOR flash sanity test: JEDEC ID, erase/write/read round-trip, hex dump over UART"
+category = "freertos"
+families = ["stm32f4"]

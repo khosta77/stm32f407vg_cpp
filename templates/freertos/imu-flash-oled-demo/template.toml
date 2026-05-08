@@ -1,0 +1,5 @@
+[template]
+name = "imu-flash-oled-demo"
+description = "Full stack demo: MPU-6050 + SSD1306 OLED on shared I2C1, W25Q32 SPI flash logger"
+category = "freertos"
+families = ["stm32f4"]

@@ -1,0 +1,5 @@
+[template]
+name = "oled-display-test"
+description = "SSD1306 128x64 OLED over I2C: render static label and a per-second counter"
+category = "freertos"
+families = ["stm32f4"]
