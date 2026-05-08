@@ -60,7 +60,17 @@ public:
             return st;
         }
 
-        for (uint32_t i = 0; i < 100000; ++i) {
+        // MPU-6050 datasheet (rev 4.2, reg 0x6B PWR_MGMT_1, bit 7 DEVICE_RESET):
+        // wait >=100 ms after DEVICE_RESET before issuing the next register write.
+        // Previous value of 100000 iterations yielded ~0.6 ms at 168 MHz HCLK,
+        // i.e. ~150x below spec, so the chip silently stayed in default sleep
+        // state on some boards: I2C slave kept ACKing at 0x68, but ACCEL/GYRO
+        // data registers always returned 0x0000 (|a| == 0 even at rest, where
+        // gravity must give ~9.81 m/s^2). volatile counter prevents the loop
+        // from being elided under -O2/-O3.
+        // First reproduced and worked around in mpu-6050-logger/src/main.cpp
+        // (mpuInitRobust() bypassed this init entirely with a DWT-based delay).
+        for (volatile uint32_t i = 0; i < 16000000U; ++i) {
             __asm volatile("nop");
         }
 
