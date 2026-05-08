@@ -14,6 +14,7 @@ import driver.uart;
 import driver.reg;
 import driver.circular_buffer;
 import driver.stm32f4.clock;
+import driver.stm32f4.dma;
 
 namespace driver::stm32f4::detail {
 
@@ -38,7 +39,12 @@ void nvicDisableIRQ(IRQn_Type irq) {
 export namespace driver {
 namespace stm32f4 {
 
-template <size_t RxBufSize = 256, size_t TxBufSize = 256>
+enum class UartMode : uint8_t {
+    Interrupt,
+    Dma,
+};
+
+template <size_t RxBufSize = 256, size_t TxBufSize = 256, UartMode Mode = UartMode::Interrupt>
 class Uart : public IUart {
     static_assert((RxBufSize & (RxBufSize - 1)) == 0, "RxBufSize must be power of 2");
     static_assert((TxBufSize & (TxBufSize - 1)) == 0, "TxBufSize must be power of 2");
@@ -237,6 +243,232 @@ public:
 
 #ifdef STM32_USE_FREERTOS
         portYIELD_FROM_ISR(woken);
+#endif
+    }
+};
+
+template <size_t RxBufSize, size_t TxBufSize>
+class Uart<RxBufSize, TxBufSize, UartMode::Dma> : public IUart {
+    static_assert((RxBufSize & (RxBufSize - 1)) == 0, "RxBufSize must be power of 2");
+    static_assert(RxBufSize >= 16, "RxBufSize too small");
+
+public:
+    struct Config {
+        uint32_t baudrate;
+        uint8_t dataBits;
+        uint8_t stopBits;
+        Parity parity;
+    };
+
+private:
+    USART_TypeDef &_periph;
+    IRQn_Type const _irqn;
+    DmaStream _txDma;
+    CircularBuffer<uint8_t, RxBufSize> _rxBuf;
+
+#ifdef STM32_USE_FREERTOS
+    SemaphoreHandle_t _rxSem = nullptr;
+    SemaphoreHandle_t _txSem = nullptr;
+    SemaphoreHandle_t _mutex = nullptr;
+#endif
+
+public:
+    Uart(USART_TypeDef &periph, IRQn_Type irqn, DmaStreamId txStreamId, const Config &cfg)
+        : _periph(periph), _irqn(irqn), _txDma(txStreamId) {
+        uint32_t pclk;
+        if (&_periph == USART1 || &_periph == USART6) {
+            pclk = getApb2Clock();
+        } else {
+            pclk = getApb1Clock();
+        }
+
+        reg::write(_periph.CR1, 0);
+        reg::write(_periph.CR2, 0);
+        reg::write(_periph.CR3, 0);
+
+        _periph.BRR = (pclk + cfg.baudrate / 2) / cfg.baudrate;
+
+        uint32_t cr1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+        if (cfg.dataBits == 9) {
+            cr1 |= USART_CR1_M;
+        }
+        if (cfg.parity == Parity::Even) {
+            cr1 |= USART_CR1_PCE;
+        } else if (cfg.parity == Parity::Odd) {
+            cr1 |= USART_CR1_PCE | USART_CR1_PS;
+        }
+        if (cfg.stopBits == 2) {
+            reg::set(_periph.CR2, USART_CR2_STOP_1);
+        }
+        cr1 |= USART_CR1_RXNEIE;
+        reg::write(_periph.CR1, cr1);
+
+        reg::set(_periph.CR3, USART_CR3_DMAT);
+
+        _txDma.configure(
+            DmaConfig{
+                .dir = DmaDir::MemToPeriph,
+                .mode = DmaMode::Normal,
+                .priority = DmaPrio::Medium,
+                .memInc = true,
+                .periphInc = false,
+                .memSize = DmaSize::Byte,
+                .periphSize = DmaSize::Byte,
+            },
+            &_periph.DR,
+            nullptr,
+            0);
+        _txDma.enableInterrupts(true, false, true);
+
+        IRQn_Type txDmaIrq = DmaStream::getIrqn(txStreamId);
+        detail::nvicSetPriority(_irqn, 6);
+        detail::nvicEnableIRQ(_irqn);
+        detail::nvicSetPriority(txDmaIrq, 6);
+        detail::nvicEnableIRQ(txDmaIrq);
+
+#ifdef STM32_USE_FREERTOS
+        _rxSem = xSemaphoreCreateBinary();
+        _txSem = xSemaphoreCreateBinary();
+        _mutex = xSemaphoreCreateMutex();
+        configASSERT(_rxSem);
+        configASSERT(_txSem);
+        configASSERT(_mutex);
+        xSemaphoreGive(_txSem);
+#endif
+    }
+
+    ~Uart() {
+        _txDma.stop();
+        detail::nvicDisableIRQ(_irqn);
+        detail::nvicDisableIRQ(DmaStream::getIrqn(_txDma.id()));
+        reg::write(_periph.CR1, 0);
+        reg::write(_periph.CR3, 0);
+
+#ifdef STM32_USE_FREERTOS
+        if (_rxSem) {
+            vSemaphoreDelete(_rxSem);
+        }
+        if (_txSem) {
+            vSemaphoreDelete(_txSem);
+        }
+        if (_mutex) {
+            vSemaphoreDelete(_mutex);
+        }
+#endif
+    }
+
+    Uart(const Uart &) = delete;
+    Uart &operator=(const Uart &) = delete;
+
+    size_t write(std::span<const uint8_t> data) override {
+        if (data.empty()) {
+            return 0;
+        }
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreTake(_mutex, portMAX_DELAY);
+#endif
+        while (_txDma.isEnabled()) {
+        }
+        _txDma.clearAllFlags();
+        _txDma.setMemoryAndCount(
+            const_cast<void *>(static_cast<const void *>(data.data())), data.size());
+        _txDma.start();
+
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreTake(_txSem, portMAX_DELAY);
+#else
+        while (!_txDma.transferComplete()) {
+        }
+        _txDma.clearAllFlags();
+#endif
+        while (!(_periph.SR & USART_SR_TC)) {
+        }
+
+#ifdef STM32_USE_FREERTOS
+        xSemaphoreGive(_mutex);
+#endif
+        return data.size();
+    }
+
+    size_t read(std::span<uint8_t> data) override {
+        size_t received = 0;
+        size_t total = data.size();
+        while (received < total) {
+            uint8_t byte;
+            if (_rxBuf.pop(byte) == Status::Ok) {
+                data[received++] = byte;
+            } else {
+#ifdef STM32_USE_FREERTOS
+                if (xSemaphoreTake(_rxSem, portMAX_DELAY) != pdTRUE) {
+                    break;
+                }
+#else
+                if (received > 0) {
+                    break;
+                }
+                while (_rxBuf.empty()) {
+                }
+#endif
+            }
+        }
+        return received;
+    }
+
+    size_t writeNonBlocking(std::span<const uint8_t> data) override {
+        if (data.empty() || _txDma.isEnabled()) {
+            return 0;
+        }
+        return write(data);
+    }
+
+    size_t readNonBlocking(std::span<uint8_t> data) override {
+        return _rxBuf.read(data.data(), data.size());
+    }
+
+    size_t rxAvailable() const override { return _rxBuf.size(); }
+    size_t txFree() const override { return _txDma.isEnabled() ? 0 : SIZE_MAX; }
+
+    void irqHandler() override {
+        uint32_t sr = reg::get(_periph.SR);
+#ifdef STM32_USE_FREERTOS
+        BaseType_t woken = pdFALSE;
+#endif
+
+        if (sr & USART_SR_RXNE) {
+            uint8_t byte = static_cast<uint8_t>(_periph.DR);
+            _rxBuf.push(byte);
+#ifdef STM32_USE_FREERTOS
+            BaseType_t w = pdFALSE;
+            if (_rxSem) {
+                xSemaphoreGiveFromISR(_rxSem, &w);
+            }
+            woken |= w;
+#endif
+        }
+
+        if (sr & (USART_SR_ORE | USART_SR_NE | USART_SR_FE | USART_SR_PE)) {
+            volatile uint32_t discard = _periph.DR;
+            (void) discard;
+        }
+
+#ifdef STM32_USE_FREERTOS
+        portYIELD_FROM_ISR(woken);
+#endif
+    }
+
+    void dmaTxIrqHandler() {
+        const bool tc = _txDma.transferComplete();
+        const bool te = _txDma.transferError();
+        if (!tc && !te) {
+            return;
+        }
+        _txDma.clearAllFlags();
+#ifdef STM32_USE_FREERTOS
+        if (_txSem) {
+            BaseType_t w = pdFALSE;
+            xSemaphoreGiveFromISR(_txSem, &w);
+            portYIELD_FROM_ISR(w);
+        }
 #endif
     }
 };
