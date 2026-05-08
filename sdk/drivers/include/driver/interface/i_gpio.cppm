@@ -40,24 +40,29 @@ struct GpioConfig {
     PullMode pull;
     OutputSpeed speed;
     OutputType type;
-    uint8_t af;
-
-    consteval GpioConfig(uint8_t p, PinMode m, PullMode pu, OutputSpeed s, OutputType t, uint8_t a = 0)
-        : pin(p), mode(m), pull(pu), speed(s), type(t), af(a) {
-        if (p > 15) {
-            throw "pin must be 0-15";
-        }
-        if (m == PinMode::None) {
-            throw "PinMode must not be None";
-        }
-        if ((m == PinMode::Output || m == PinMode::AlternateFunction) && s == OutputSpeed::None) {
-            throw "OutputSpeed required for Output/AF";
-        }
-        if ((m == PinMode::Output || m == PinMode::AlternateFunction) && t == OutputType::None) {
-            throw "OutputType required for Output/AF";
-        }
-    }
+    uint8_t af = 0;
 };
+
+consteval GpioConfig gpio(GpioConfig c) {
+    if (c.pin > 15) {
+        throw "GpioConfig: pin must be in [0, 15]";
+    }
+    if (c.mode == PinMode::None) {
+        throw "GpioConfig: mode must not be PinMode::None";
+    }
+    const bool needsDrive =
+        (c.mode == PinMode::Output || c.mode == PinMode::AlternateFunction);
+    if (needsDrive && c.speed == OutputSpeed::None) {
+        throw "GpioConfig: OutputSpeed required for Output/AlternateFunction";
+    }
+    if (needsDrive && c.type == OutputType::None) {
+        throw "GpioConfig: OutputType required for Output/AlternateFunction";
+    }
+    if (c.mode == PinMode::AlternateFunction && c.af > 15) {
+        throw "GpioConfig: af must be in [0, 15]";
+    }
+    return c;
+}
 
 class IGpioPin {
 public:
