@@ -4,6 +4,7 @@
 import driver.gpio;
 import driver.stm32f4.gpio;
 
+using driver::gpio;
 using driver::GpioConfig;
 using driver::OutputSpeed;
 using driver::OutputType;
@@ -13,9 +14,36 @@ using driver::stm32f4::GpioPin;
 
 namespace {
 
-GpioPin g_ledGreen{*GPIOD, {12, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
-GpioPin g_ledRed{*GPIOD, {14, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
-GpioPin g_ledBlue{*GPIOD, {15, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
+GpioPin g_ledGreen{
+    *GPIOD,
+    gpio({
+        .pin = 12,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
+GpioPin g_ledRed{
+    *GPIOD,
+    gpio({
+        .pin = 14,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
+GpioPin g_ledBlue{
+    *GPIOD,
+    gpio({
+        .pin = 15,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
 
 void taskGreen(void *) {
     while (true) {
