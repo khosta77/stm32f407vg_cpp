@@ -84,9 +84,9 @@ public:
         reg::write(_periph.CR2, 0);
         reg::write(_periph.CR3, 0);
 
-        _periph.BRR = (pclk + cfg.baudrate / 2) / cfg.baudrate;
+        reg::write(_periph.BRR, (pclk + cfg.baudrate / 2) / cfg.baudrate);
 
-        uint32_t cr1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+        uint32_t cr1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
 
         if (cfg.dataBits == 9) {
             cr1 |= USART_CR1_M;
@@ -102,7 +102,6 @@ public:
             reg::set(_periph.CR2, USART_CR2_STOP_1);
         }
 
-        cr1 |= USART_CR1_RXNEIE;
         reg::write(_periph.CR1, cr1);
 
         detail::nvicSetPriority(_irqn, 6);
@@ -203,13 +202,13 @@ public:
     size_t txFree() const override { return _txBuf.free_space(); }
 
     void irqHandler() override {
-        uint32_t sr = reg::get(_periph.SR);
+        const uint32_t sr = reg::get(_periph.SR);
 #ifdef STM32_USE_FREERTOS
         BaseType_t woken = pdFALSE;
 #endif
 
         if (sr & USART_SR_RXNE) {
-            uint8_t byte = static_cast<uint8_t>(_periph.DR);
+            const uint8_t byte = static_cast<uint8_t>(reg::get(_periph.DR));
             _rxBuf.push(byte);
 #ifdef STM32_USE_FREERTOS
             BaseType_t w = pdFALSE;
@@ -223,7 +222,7 @@ public:
         if (sr & USART_SR_TXE) {
             uint8_t byte;
             if (_txBuf.pop(byte) == Status::Ok) {
-                _periph.DR = byte;
+                reg::write(_periph.DR, byte);
             } else {
                 reg::clear(_periph.CR1, USART_CR1_TXEIE);
 #ifdef STM32_USE_FREERTOS
@@ -237,8 +236,7 @@ public:
         }
 
         if (sr & (USART_SR_ORE | USART_SR_NE | USART_SR_FE | USART_SR_PE)) {
-            volatile uint32_t discard = _periph.DR;
-            (void) discard;
+            (void) reg::get(_periph.DR);
         }
 
 #ifdef STM32_USE_FREERTOS
@@ -286,9 +284,9 @@ public:
         reg::write(_periph.CR2, 0);
         reg::write(_periph.CR3, 0);
 
-        _periph.BRR = (pclk + cfg.baudrate / 2) / cfg.baudrate;
+        reg::write(_periph.BRR, (pclk + cfg.baudrate / 2) / cfg.baudrate);
 
-        uint32_t cr1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+        uint32_t cr1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
         if (cfg.dataBits == 9) {
             cr1 |= USART_CR1_M;
         }
@@ -300,7 +298,6 @@ public:
         if (cfg.stopBits == 2) {
             reg::set(_periph.CR2, USART_CR2_STOP_1);
         }
-        cr1 |= USART_CR1_RXNEIE;
         reg::write(_periph.CR1, cr1);
 
         reg::set(_periph.CR3, USART_CR3_DMAT);
@@ -381,7 +378,7 @@ public:
         }
         _txDma.clearAllFlags();
 #endif
-        while (!(_periph.SR & USART_SR_TC)) {
+        while (!reg::read(_periph.SR, USART_SR_TC)) {
         }
 
 #ifdef STM32_USE_FREERTOS
@@ -429,13 +426,13 @@ public:
     size_t txFree() const override { return _txDma.isEnabled() ? 0 : SIZE_MAX; }
 
     void irqHandler() override {
-        uint32_t sr = reg::get(_periph.SR);
+        const uint32_t sr = reg::get(_periph.SR);
 #ifdef STM32_USE_FREERTOS
         BaseType_t woken = pdFALSE;
 #endif
 
         if (sr & USART_SR_RXNE) {
-            uint8_t byte = static_cast<uint8_t>(_periph.DR);
+            const uint8_t byte = static_cast<uint8_t>(reg::get(_periph.DR));
             _rxBuf.push(byte);
 #ifdef STM32_USE_FREERTOS
             BaseType_t w = pdFALSE;
@@ -447,8 +444,7 @@ public:
         }
 
         if (sr & (USART_SR_ORE | USART_SR_NE | USART_SR_FE | USART_SR_PE)) {
-            volatile uint32_t discard = _periph.DR;
-            (void) discard;
+            (void) reg::get(_periph.DR);
         }
 
 #ifdef STM32_USE_FREERTOS
