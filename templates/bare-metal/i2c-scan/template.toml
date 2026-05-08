@@ -1,0 +1,5 @@
+[template]
+name = "i2c-scan"
+description = "Scan I2C1 bus for connected devices and print 7-bit addresses over UART (bare-metal, no FreeRTOS)"
+category = "bare-metal"
+families = ["stm32f4"]
