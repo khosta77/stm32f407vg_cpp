@@ -5,6 +5,7 @@
 import driver.types;
 import driver.gpio;
 import driver.uart;
+import driver.stm32f4.dma;
 import driver.stm32f4.gpio;
 import driver.stm32f4.i2c;
 import driver.stm32f4.uart;
@@ -23,13 +24,15 @@ using driver::OutputType;
 using driver::Parity;
 using driver::PinMode;
 using driver::PullMode;
+namespace dmaMap = driver::stm32f4::dmaMap;
 using driver::stm32f4::GpioPin;
 using driver::stm32f4::I2c;
 using driver::stm32f4::Uart;
+using driver::stm32f4::UartMode;
 
 extern "C" void __initialize_hardware() {
     SystemCoreClockUpdate();
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIODEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_DMA1EN;
     RCC->APB1ENR |= RCC_APB1ENR_I2C1EN | RCC_APB1ENR_USART2EN;
     __DSB();
 }
@@ -131,9 +134,10 @@ I2c g_i2c1{
         .fastMode = true,
     },
 };
-Uart<> g_uart2{
+Uart<256, 256, UartMode::Dma> g_uart2{
     *USART2,
     USART2_IRQn,
+    dmaMap::usart2_tx,
     {
         .baudrate = 115200,
         .dataBits = 8,
@@ -209,6 +213,10 @@ void taskLed(void *param) {
 
 extern "C" void USART2_IRQHandler() {
     g_uart2.irqHandler();
+}
+
+extern "C" void DMA1_Stream6_IRQHandler() {
+    g_uart2.dmaTxIrqHandler();
 }
 
 int main() {
