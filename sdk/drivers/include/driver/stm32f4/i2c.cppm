@@ -57,17 +57,24 @@ private:
     void generateStop() const { reg::set(_periph.CR1, I2C_CR1_STOP); }
 
     bool sendAddress(uint8_t addr, bool readOp) const {
-        _periph.DR = (addr << 1) | (readOp ? 1 : 0);
-        if (!waitFlag(_periph.SR1, I2C_SR1_ADDR, true)) {
-            if (reg::read(_periph.SR1, I2C_SR1_AF)) {
+        _periph.DR = static_cast<uint32_t>((addr << 1) | (readOp ? 1 : 0));
+        // Race ADDR (slave ACK'd, success) against AF (slave NACK'd, fail). On
+        // NACK the AF bit is set in ~9 SCL cycles, so this lets probe() and
+        // any other transaction abort almost immediately for absent addresses
+        // instead of burning the full waitFlag timeout.
+        for (uint32_t i = 0, n = getTimeoutLoops(); i < n; ++i) {
+            const uint32_t sr1 = reg::get(_periph.SR1);
+            if (sr1 & I2C_SR1_ADDR) {
+                (void) reg::get(_periph.SR2);
+                return true;
+            }
+            if (sr1 & I2C_SR1_AF) {
                 reg::clear(_periph.SR1, I2C_SR1_AF);
                 generateStop();
+                return false;
             }
-            return false;
         }
-        volatile uint32_t dummy = _periph.SR2;
-        (void) dummy;
-        return true;
+        return false;
     }
 
     void busRecovery() {
