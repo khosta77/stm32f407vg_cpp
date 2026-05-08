@@ -17,6 +17,9 @@ import driver.stm32f4.clock;
 export namespace driver {
 namespace stm32f4 {
 
+// SPI DMA stream IDs are reserved in driver.stm32f4.dma (dmaMap::spi1_tx etc.).
+// Async transfer via DMA will land in a follow-up PR.
+
 class Spi : public ISpi {
 public:
     struct Config {
