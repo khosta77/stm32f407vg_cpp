@@ -109,14 +109,14 @@ public:
 
     void configure(const DmaConfig& cfg, volatile void* periphAddr, void* memAddr, size_t count) {
         reg::clear(_stream->CR, DMA_SxCR_EN);
-        while (_stream->CR & DMA_SxCR_EN) {
+        while (reg::read(_stream->CR, DMA_SxCR_EN)) {
         }
         clearAllFlags();
 
-        _stream->PAR = reinterpret_cast<uint32_t>(periphAddr);
-        _stream->M0AR = reinterpret_cast<uint32_t>(memAddr);
-        _stream->NDTR = static_cast<uint32_t>(count);
-        _stream->FCR = 0;
+        reg::write(_stream->PAR, reinterpret_cast<uint32_t>(periphAddr));
+        reg::write(_stream->M0AR, reinterpret_cast<uint32_t>(memAddr));
+        reg::write(_stream->NDTR, static_cast<uint32_t>(count));
+        reg::write(_stream->FCR, 0);
 
         uint32_t cr = 0;
         cr |= (static_cast<uint32_t>(_id.channel) & 0x7U) << DMA_SxCR_CHSEL_Pos;
@@ -133,7 +133,7 @@ public:
         if (cfg.mode == DmaMode::Circular) {
             cr |= DMA_SxCR_CIRC;
         }
-        _stream->CR = cr;
+        reg::write(_stream->CR, cr);
     }
 
     void enableInterrupts(bool transferComplete, bool halfTransfer, bool transferError) {
@@ -151,48 +151,48 @@ public:
     }
 
     void setMemoryAndCount(void* memAddr, size_t count) {
-        _stream->M0AR = reinterpret_cast<uint32_t>(memAddr);
-        _stream->NDTR = static_cast<uint32_t>(count);
+        reg::write(_stream->M0AR, reinterpret_cast<uint32_t>(memAddr));
+        reg::write(_stream->NDTR, static_cast<uint32_t>(count));
     }
 
     void start() { reg::set(_stream->CR, DMA_SxCR_EN); }
 
     void stop() {
         reg::clear(_stream->CR, DMA_SxCR_EN);
-        while (_stream->CR & DMA_SxCR_EN) {
+        while (reg::read(_stream->CR, DMA_SxCR_EN)) {
         }
     }
 
-    bool isEnabled() const { return _stream->CR & DMA_SxCR_EN; }
+    bool isEnabled() const { return reg::read(_stream->CR, DMA_SxCR_EN); }
 
-    size_t remaining() const { return static_cast<size_t>(_stream->NDTR); }
+    size_t remaining() const { return static_cast<size_t>(reg::get(_stream->NDTR)); }
 
     bool transferComplete() const {
-        return detail::flagsReg(_dma, _id.streamIndex) & detail::tcifMask(_id.streamIndex);
+        return reg::read(detail::flagsReg(_dma, _id.streamIndex), detail::tcifMask(_id.streamIndex));
     }
 
     bool halfTransfer() const {
-        return detail::flagsReg(_dma, _id.streamIndex) & detail::htifMask(_id.streamIndex);
+        return reg::read(detail::flagsReg(_dma, _id.streamIndex), detail::htifMask(_id.streamIndex));
     }
 
     bool transferError() const {
-        return detail::flagsReg(_dma, _id.streamIndex) & detail::teifMask(_id.streamIndex);
+        return reg::read(detail::flagsReg(_dma, _id.streamIndex), detail::teifMask(_id.streamIndex));
     }
 
     void clearTransferComplete() {
-        detail::clearReg(_dma, _id.streamIndex) = detail::tcifMask(_id.streamIndex);
+        reg::write(detail::clearReg(_dma, _id.streamIndex), detail::tcifMask(_id.streamIndex));
     }
 
     void clearHalfTransfer() {
-        detail::clearReg(_dma, _id.streamIndex) = detail::htifMask(_id.streamIndex);
+        reg::write(detail::clearReg(_dma, _id.streamIndex), detail::htifMask(_id.streamIndex));
     }
 
     void clearTransferError() {
-        detail::clearReg(_dma, _id.streamIndex) = detail::teifMask(_id.streamIndex);
+        reg::write(detail::clearReg(_dma, _id.streamIndex), detail::teifMask(_id.streamIndex));
     }
 
     void clearAllFlags() {
-        detail::clearReg(_dma, _id.streamIndex) = detail::allFlagsMask(_id.streamIndex);
+        reg::write(detail::clearReg(_dma, _id.streamIndex), detail::allFlagsMask(_id.streamIndex));
     }
 
     DmaStreamId id() const { return _id; }
