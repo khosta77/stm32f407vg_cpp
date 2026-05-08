@@ -16,6 +16,7 @@ float atan2f(float y, float x);
 int snprintf(char *str, size_t size, const char *format, ...);
 }
 
+using driver::gpio;
 using driver::GpioConfig;
 using driver::OutputSpeed;
 using driver::OutputType;
@@ -39,25 +40,117 @@ constexpr float RAD_TO_DEG = 180.0f / 3.14159265f;
 namespace {
 
 GpioPin g_uartTx{
-    *GPIOA, {2, PinMode::AlternateFunction, PullMode::None, OutputSpeed::VeryHigh, OutputType::PushPull, 7}};
+    *GPIOA,
+    gpio({
+        .pin = 2,
+        .mode = PinMode::AlternateFunction,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::VeryHigh,
+        .type = OutputType::PushPull,
+        .af = 7,
+    }),
+};
 GpioPin g_uartRx{
-    *GPIOA, {3, PinMode::AlternateFunction, PullMode::None, OutputSpeed::VeryHigh, OutputType::PushPull, 7}};
+    *GPIOA,
+    gpio({
+        .pin = 3,
+        .mode = PinMode::AlternateFunction,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::VeryHigh,
+        .type = OutputType::PushPull,
+        .af = 7,
+    }),
+};
 GpioPin g_i2cScl{
     *GPIOB,
-    {6, PinMode::AlternateFunction, PullMode::PullUp, OutputSpeed::VeryHigh, OutputType::OpenDrain, 4}};
+    gpio({
+        .pin = 6,
+        .mode = PinMode::AlternateFunction,
+        .pull = PullMode::PullUp,
+        .speed = OutputSpeed::VeryHigh,
+        .type = OutputType::OpenDrain,
+        .af = 4,
+    }),
+};
 GpioPin g_i2cSda{
     *GPIOB,
-    {7, PinMode::AlternateFunction, PullMode::PullUp, OutputSpeed::VeryHigh, OutputType::OpenDrain, 4}};
-GpioPin g_ledGreen{*GPIOD, {12, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
-GpioPin g_ledOrange{*GPIOD, {13, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
-GpioPin g_ledRed{*GPIOD, {14, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
-GpioPin g_ledBlue{*GPIOD, {15, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull}};
+    gpio({
+        .pin = 7,
+        .mode = PinMode::AlternateFunction,
+        .pull = PullMode::PullUp,
+        .speed = OutputSpeed::VeryHigh,
+        .type = OutputType::OpenDrain,
+        .af = 4,
+    }),
+};
+GpioPin g_ledGreen{
+    *GPIOD,
+    gpio({
+        .pin = 12,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
+GpioPin g_ledOrange{
+    *GPIOD,
+    gpio({
+        .pin = 13,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
+GpioPin g_ledRed{
+    *GPIOD,
+    gpio({
+        .pin = 14,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
+GpioPin g_ledBlue{
+    *GPIOD,
+    gpio({
+        .pin = 15,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
 
-I2c g_i2c1{*I2C1, {.clockSpeed = 400000, .fastMode = true}};
+I2c g_i2c1{
+    *I2C1,
+    {
+        .clockSpeed = 400000,
+        .fastMode = true,
+    },
+};
 Uart<> g_uart2{
-    *USART2, USART2_IRQn, {.baudrate = 115200, .dataBits = 8, .stopBits = 1, .parity = Parity::None}};
-sensor::Mpu6050 g_mpu{g_i2c1,
-                      {.addr = 0x68, .accelRange = 2, .gyroRange = 250, .sampleRateDiv = 7, .dlpfMode = 6}};
+    *USART2,
+    USART2_IRQn,
+    {
+        .baudrate = 115200,
+        .dataBits = 8,
+        .stopBits = 1,
+        .parity = Parity::None,
+    },
+};
+sensor::Mpu6050 g_mpu{
+    g_i2c1,
+    {
+        .addr = 0x68,
+        .accelRange = 2,
+        .gyroRange = 250,
+        .sampleRateDiv = 7,
+        .dlpfMode = 6,
+    },
+};
 
 driver::Status readImu(sensor::ImuData &out, void *ctx) {
     auto *mpu = static_cast<sensor::Mpu6050 *>(ctx);
@@ -78,7 +171,7 @@ void taskView(void *param) {
         int t = static_cast<int>(data.temp * 10);
         int len = snprintf(buf, sizeof(buf), "A:%d %d %d G:%d %d %d T:%d\r\n", ax, ay, az, gx, gy, gz, t);
         if (len > 0) {
-            g_uart2.write({reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len)});
+            g_uart2.write({ reinterpret_cast<const uint8_t *>(buf), static_cast<size_t>(len) });
         }
         rtos::Task::delay(pdMS_TO_TICKS(100));
     }
