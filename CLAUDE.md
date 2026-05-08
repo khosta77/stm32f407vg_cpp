@@ -19,6 +19,11 @@ stmtool flash
 - Google Code Style (clang-format)
 - Conventional Commits на английском
 - Без сырых указателей на MMIO -- ссылки (`GPIO_TypeDef&`)
+- Доступ к MMIO регистрам -- только через обёртки `reg::set` / `reg::clear` /
+  `reg::read` / `reg::write` / `reg::get` / `reg::modify`. Сырые `|=`, `&=`,
+  `& flag`, `= value` на `volatile uint32_t` (`RCC->...`, `_periph.CR1`,
+  `_stream->NDTR` и т. п.) запрещены. Локальные `uint32_t` накопители битов
+  перед одним `reg::write` -- допустимы.
 - Config structs без значений по умолчанию -- все задается явно
 - Глобальные объекты периферии (не static local, не указатели)
 
@@ -97,13 +102,31 @@ I2c::Config{ .clockSpeed = 400000, .fastMode = true }
 Uart<>::Config{ .baudrate = 115200, .dataBits = 8, .stopBits = 1, .parity = Parity::None }
 ```
 
-### GpioConfig -- consteval валидация
+### GpioConfig -- aggregate + consteval валидация через `gpio()`
+
+`GpioConfig` -- обычный aggregate (`af = 0` единственный default). Валидация
+вынесена в свободную `consteval` функцию `gpio()`:
 
 ```cpp
-GpioConfig{ 12, PinMode::Output, PullMode::None, OutputSpeed::Low, OutputType::PushPull }
+GpioPin g_led{
+    *GPIOD,
+    gpio({
+        .pin = 12,
+        .mode = PinMode::Output,
+        .pull = PullMode::None,
+        .speed = OutputSpeed::Low,
+        .type = OutputType::PushPull,
+    }),
+};
 ```
 
-consteval конструктор -- ошибка компиляции если PinMode::None или pin > 15.
+`gpio({...})` бросает (на этапе компиляции) при `pin > 15`, `mode == None`,
+отсутствующих `speed`/`type` для Output/AF, `af > 15` для AF. Поскольку это
+`consteval`, вызов с runtime-значениями отвергается компилятором -- невозможно
+случайно протащить непроверенный конфиг.
+
+Trailing comma после последнего поля (`.type = ...,`) -- идиома: clang-format
+сохраняет multiline форматирование, не схлопывая в одну строку.
 
 ### Uart -- template buffer sizes
 
@@ -120,14 +143,14 @@ static_assert: power of 2, minimum 16.
 ```cpp
 extern "C" void __initialize_hardware() {
     SystemCoreClockUpdate();
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIODEN;
-    RCC->APB1ENR |= RCC_APB1ENR_I2C1EN | RCC_APB1ENR_USART2EN;
+    driver::reg::set(RCC->AHB1ENR, RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIODEN);
+    driver::reg::set(RCC->APB1ENR, RCC_APB1ENR_I2C1EN | RCC_APB1ENR_USART2EN);
     __DSB();
 }
 
 namespace {
-GpioPin g_led{*GPIOD, {12, PinMode::Output, ...}};
-I2c g_i2c1{*I2C1, {...}};
+GpioPin g_led{*GPIOD, gpio({.pin = 12, .mode = PinMode::Output, ...})};
+I2c g_i2c1{*I2C1, {.clockSpeed = 400000, .fastMode = true}};
 Uart<> g_uart2{*USART2, USART2_IRQn, {...}};
 }
 ```
