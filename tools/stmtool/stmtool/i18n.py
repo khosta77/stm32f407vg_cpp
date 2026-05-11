@@ -163,6 +163,38 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "Warning: template '{template}' has no CLAUDE.md.template — skipping",
         "ru": "Предупреждение: у шаблона '{template}' нет CLAUDE.md.template — пропускаем",
     },
+    "sdk_help": {
+        "en": "Manage the cached SDK",
+        "ru": "Управление кэшем SDK",
+    },
+    "sdk_update_help": {
+        "en": "Update the cached SDK to a release tag or develop",
+        "ru": "Обновить кэш SDK до релизного тега или develop",
+    },
+    "sdk_update_version_help": {
+        "en": "SDK version (release tag like 0.1.2 or 'develop'); defaults to [sdk] version in stmproject.toml",
+        "ru": "Версия SDK (тег вида 0.1.2 или 'develop'); по умолчанию — [sdk] version из stmproject.toml",
+    },
+    "sdk_list_versions_help": {
+        "en": "List available SDK versions (git tags)",
+        "ru": "Показать доступные версии SDK (git-теги)",
+    },
+    "sdk_path_help": {
+        "en": "Print the resolved SDK root path",
+        "ru": "Показать резолвнутый путь к корню SDK",
+    },
+    "sdk_updating": {
+        "en": "Updating SDK to '{version}'...",
+        "ru": "Обновление SDK до '{version}'...",
+    },
+    "sdk_updated": {
+        "en": "SDK updated to '{version}' at {path}",
+        "ru": "SDK обновлён до '{version}' в {path}",
+    },
+    "sdk_no_tags_found": {
+        "en": "No release tags found in the SDK cache",
+        "ru": "В кэше SDK не найдено релизных тегов",
+    },
 }
 
 

@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.table import Table
 
 from stmtool import __version__
+from stmtool import sdk as sdk_module
 from stmtool.config import load_config
 from stmtool.i18n import t
 from stmtool.completions import complete_chip, complete_flash_tool, complete_template
@@ -15,6 +16,9 @@ from stmtool.project import create_project, list_templates, resolve_sdk_root
 app = typer.Typer(name="stmtool", help=t("app_help"), no_args_is_help=True)
 project_app = typer.Typer(help=t("project_help"))
 app.add_typer(project_app, name="project")
+
+sdk_app = typer.Typer(help=t("sdk_help"))
+app.add_typer(sdk_app, name="sdk")
 
 console = Console()
 
@@ -158,6 +162,45 @@ def flash(
         raise typer.Exit(code=result.returncode)
     else:
         console.print(f"[yellow]{t('not_implemented')}[/yellow]")
+        raise typer.Exit(code=1)
+
+
+@sdk_app.command("update", help=t("sdk_update_help"))
+def sdk_update(
+    version: str = typer.Option(
+        None, "--version", help=t("sdk_update_version_help")
+    ),
+) -> None:
+    target_version = version or sdk_module.project_sdk_version() or "develop"
+    try:
+        with console.status(t("sdk_updating", version=target_version)):
+            sdk_root = sdk_module.update_cache(target_version)
+    except RuntimeError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
+    console.print(
+        f"[bold green]{t('sdk_updated', version=target_version, path=sdk_root)}[/bold green]"
+    )
+
+
+@sdk_app.command("list-versions", help=t("sdk_list_versions_help"))
+def sdk_list_versions() -> None:
+    versions = sdk_module.list_versions()
+    if not versions:
+        console.print(f"[yellow]{t('sdk_no_tags_found')}[/yellow]")
+        raise typer.Exit(code=1)
+    current = sdk_module.current_version()
+    for v in versions:
+        marker = " *" if current and (current == v or current.startswith(v + "-")) else ""
+        print(f"{v}{marker}")
+
+
+@sdk_app.command("path", help=t("sdk_path_help"))
+def sdk_path() -> None:
+    try:
+        print(sdk_module.resolve_path())
+    except RuntimeError as e:
+        console.print(f"[red]{e}[/red]")
         raise typer.Exit(code=1)
 
 
