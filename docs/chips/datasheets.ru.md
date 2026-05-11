@@ -1,4 +1,4 @@
-# Документация STM32F4
+# Даташиты и руководства STM32
 
 ## STM32F407VG
 
@@ -15,10 +15,10 @@
 - [Datasheet STM32F411xC/xE](https://www.st.com/resource/en/datasheet/stm32f411ce.pdf)
 - [Reference Manual RM0383](https://www.st.com/resource/en/reference_manual/rm0383-stm32f411xce-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
 
-## STM32F429/F439
+## STM32F429 / F439
 
 - [Datasheet STM32F429/439](https://www.st.com/resource/en/datasheet/stm32f429zi.pdf)
-- Reference Manual: RM0090 (см. выше)
+- Reference Manual: RM0090 (см. выше).
 
 ## STM32F446
 
