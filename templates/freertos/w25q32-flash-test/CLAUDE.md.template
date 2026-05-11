@@ -1,0 +1,103 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — round-trip test for
+a Winbond W25Q32JV SPI flash chip: read JEDEC ID, erase a sector, page-program,
+read back, verify.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- W25Q32: <https://khosta77.github.io/stm32-sdk/sensors/w25q32/>
+- SPI driver: <https://khosta77.github.io/stm32-sdk/modules/drivers/#spi-driverstm32f4spi>
+
+## This template
+
+Exercises the `sensor.w25q32` driver and the `IExternalFlash` interface.
+Run once at boot, output goes over USART2 (115200 baud, interrupt mode).
+
+### Pinout (SPI2)
+
+| Function | Pin | Notes |
+|----------|-----|-------|
+| SPI2 SCK | PB13 | AF5 |
+| SPI2 MISO | PB14 | AF5 |
+| SPI2 MOSI | PB15 | AF5 |
+| W25Q32 CS | PB12 | output, push-pull, driven low during transactions |
+| USART2 TX | PA2 | AF7, log output |
+
+SPI2 clock: 10 MHz. UART: 115200 baud.
+
+### Connect the W25Q32
+
+| Flash pin | STM32 pin |
+|-----------|-----------|
+| VCC | 3.3 V |
+| GND | GND |
+| CS | PB12 |
+| CLK | PB13 |
+| DO (MISO) | PB14 |
+| DI (MOSI) | PB15 |
+| WP | 3.3 V (write-protect disabled) |
+| HOLD | 3.3 V (hold disabled) |
+
+### Expected serial output
+
+```
+W25Q32 round-trip test
+JEDEC ID: 0xEF4016
+erase sector 0x00000000 ... ok
+page program 0x00000000 ... ok
+read 0x00000000 .. 0x0000003F:
+  A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
+  B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD BE BF
+  C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
+  D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE DF
+VERIFY OK
+```
+
+The JEDEC ID `0xEF4016` identifies W25Q32JV (Winbond, 32 Mbit). If you see
+a different ID:
+
+| ID prefix | Manufacturer |
+|-----------|--------------|
+| `0xEF` | Winbond |
+| `0xC8` | GigaDevice |
+| `0x68` | BoyaMicro |
+
+### How to verify
+
+1. Open the FTDI serial port **before** resetting the MCU (macOS flushes the
+   RX FIFO when the port is first opened — the test output is one-shot).
+2. Reset the board.
+3. Confirm `JEDEC ID: 0xEF4016` (or another valid value for your chip).
+4. The 64 hex bytes match the pattern `A0..AF, B0..BF, C0..CF, D0..DF`.
+5. Final line is `VERIFY OK`.
+
+If no output:
+- Check that USART2 TX (PA2) is wired to FTDI RX.
+- Confirm SPI2 wiring; the simplest miswiring is MISO/MOSI swap.
+- Verify VCC is 3.3 V — W25Q32 is not 5 V tolerant.
+
+### When to extend
+
+The driver also supports `chipErase()` (slow — seconds), `eraseSector()` at
+any 4 KiB-aligned address, and `read()` of arbitrary length. Total capacity
+is 4 MiB (32 Mbit, 1024 sectors × 4 KiB).

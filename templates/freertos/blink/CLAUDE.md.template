@@ -1,0 +1,67 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — FreeRTOS `rtos::Task`
+controlling LEDs.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- FreeRTOS helpers: <https://khosta77.github.io/stm32-sdk/modules/freertos/>
+
+## This template
+
+Two FreeRTOS tasks share the LEDs on the F407VG-DISC1:
+
+- `taskGreen` toggles the green LED every 500 ms (PD12).
+- `taskRedBlue` alternates red and blue every 250 ms (PD14 / PD15).
+
+Demonstrates: `rtos::Task` static instances, `vTaskStartScheduler()`,
+`rtos::Task::delay()`, designated-initializer `GpioConfig` via `gpio({...})`.
+
+### Pinout (F407VG-DISC1)
+
+| Function | Pin |
+|----------|-----|
+| LED green | PD12 |
+| LED red | PD14 |
+| LED blue | PD15 |
+
+### Key file references
+
+- `__initialize_hardware()` not overridden — `GpioPin` enables `RCC_AHB1ENR_GPIODEN`
+  in its own constructor based on the port address.
+- Tasks: `static rtos::Task` in `main()`. The instance must outlive
+  `vTaskStartScheduler()` (which never returns under normal operation).
+- No ISRs registered — pure cooperative scheduling.
+
+### How to verify
+
+After flash, all three LEDs cycle continuously. If the board is dark, check
+that the scheduler started (a stuck `vTaskStartScheduler()` returns
+immediately if `configTOTAL_HEAP_SIZE` is too small or a task creation
+failed). Connect a debugger and inspect `pxCurrentTCB` — non-null = scheduler
+running.
+
+### When to extend
+
+Use this as the skeleton for new FreeRTOS-based projects: add peripherals,
+turn them into globals after `__initialize_hardware()`, register ISR
+handlers, and create more `rtos::Task` instances.

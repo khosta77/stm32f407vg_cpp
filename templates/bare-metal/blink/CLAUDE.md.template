@@ -1,0 +1,63 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — bare-metal SysTick-based
+LED blinker on the F407VG-DISC1 onboard LEDs.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+  Raw `|=`, `&=` on `volatile uint32_t` registers are forbidden.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- Upgrade notes: <https://khosta77.github.io/stm32-sdk/migration/>
+
+## This template
+
+Demonstrates the minimum bootable image: linker scripts, Cortex-M startup,
+SysTick, direct GPIO toggling. **No drivers, no FreeRTOS** — pure CMSIS plus
+the `cmsis/stm32f4xx.h` header.
+
+### Pinout (F407VG-DISC1)
+
+| Function | Pin |
+|----------|-----|
+| LED green | PD12 |
+| LED orange | PD13 |
+| LED red | PD14 |
+| LED blue | PD15 |
+
+### What `main.cpp` does
+
+1. Configures SysTick for a 1 kHz tick.
+2. Enables GPIOD clock via `RCC->AHB1ENR`.
+3. Sets PD12-PD15 to output mode.
+4. Loops: lights each LED in sequence (125 ms each), then all off (500 ms).
+
+### How to verify
+
+Onboard LEDs cycle green → orange → red → blue → all-off. If you don't see
+the sequence, check power, ST-Link connection, and that the firmware flashed
+successfully (`stmtool flash` should print "Flash written and verified").
+
+### When to extend
+
+If you want to use proper drivers (with `reg::` helpers, `GpioPin`, etc.),
+start fresh from `--template freertos-blink` or one of the sensor templates.
+This template intentionally keeps everything inline to show what the SDK
+runtime takes care of for you.

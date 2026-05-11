@@ -1,0 +1,103 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — MPU6050 IMU sampled at
+10 Hz, raw values streamed over USART2 with DMA TX, tilt indicator on the
+F407VG-DISC1 LEDs.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- MPU6050: <https://khosta77.github.io/stm32-sdk/sensors/mpu6050/>
+- UART DMA: <https://khosta77.github.io/stm32-sdk/modules/drivers/#uart-driverstm32f4uart>
+
+## This template
+
+Combines several SDK features:
+
+- `sensor.mpu6050` reading the 14-byte accel/temp/gyro block over I2C1.
+- `Uart<256, 256, UartMode::Dma>` writing through DMA1 Stream 6 (USART2 TX).
+- `CachedSensor<ImuData>` background-sampling task at 10 Hz.
+- Tilt indicator: pitch / roll from accel vector light up corresponding LEDs.
+
+### Pinout
+
+| Function | Pin | Notes |
+|----------|-----|-------|
+| I2C1 SCL | PB6 | AF4, open-drain, pull-up |
+| I2C1 SDA | PB7 | AF4, open-drain, pull-up |
+| USART2 TX | PA2 | AF7 |
+| USART2 RX | PA3 | AF7 (not used) |
+| LED green | PD12 | pitch > +15° |
+| LED orange | PD13 | roll > +15° |
+| LED red | PD14 | pitch < −15° |
+| LED blue | PD15 | roll < −15° |
+
+I2C clock: 400 kHz (Fast Mode). UART: 115200 baud, 8N1, DMA TX.
+
+### Connect an MPU6050
+
+| MPU6050 pin | STM32 pin |
+|-------------|-----------|
+| VCC | 3.3 V |
+| GND | GND |
+| SCL | PB6 |
+| SDA | PB7 |
+| AD0 | GND (address 0x68) |
+
+### Expected serial output
+
+```
+A:0 0 100 G:0 0 0 T:230
+A:-1 1 99 G:0 1 -1 T:230
+A:1 -1 100 G:1 0 1 T:230
+...
+```
+
+- `A:` = accel × 100 (so `100` ≈ 1.00 g; on a flat surface Z should be ≈ 100).
+- `G:` = gyro × 10 (dps × 10; at rest noise should be `±5`).
+- `T:` = temperature × 10 °C.
+
+Sample rate: 10 Hz (100 ms between lines).
+
+### ISR registration
+
+```cpp
+extern "C" void USART2_IRQHandler()      { g_uart2.irqHandler(); }
+extern "C" void DMA1_Stream6_IRQHandler(){ g_uart2.dmaTxIrqHandler(); }
+```
+
+Direct references to the global object. Both ISRs are required for DMA-mode UART.
+
+### How to verify
+
+1. Connect FTDI to PA2/GND at 115200 baud.
+2. Open the serial port **before** resetting the MCU (macOS flushes the RX
+   FIFO when the port is first opened — boot output is one-shot).
+3. Reset the board.
+4. Lines arrive at ~10 Hz. On a flat horizontal surface:
+   - `|accel.z| ≈ 100` (1 g), `|accel.x|`, `|accel.y|` ≤ 5.
+   - Gyro values ≤ ±5.
+   - Temperature near room temperature (≈ 23 °C).
+5. Tilting the board lights the appropriate LED.
+
+If sampling is stuck or jittery, check the I2C pull-ups, verify the MPU6050
+shows up in [`bare-metal/i2c-scan`](https://github.com/khosta77/stm32-sdk/tree/develop/templates/bare-metal/i2c-scan)
+at address `0x68`.

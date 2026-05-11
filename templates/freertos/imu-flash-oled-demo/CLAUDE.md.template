@@ -1,0 +1,94 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — full-stack demo:
+MPU6050 IMU + SSD1306 OLED on the same I2C bus, W25Q32 SPI flash logging in
+the background.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- MPU6050: <https://khosta77.github.io/stm32-sdk/sensors/mpu6050/>
+- SSD1306: <https://khosta77.github.io/stm32-sdk/sensors/ssd1306/>
+- W25Q32: <https://khosta77.github.io/stm32-sdk/sensors/w25q32/>
+
+## This template
+
+Three sensors on two buses, sharing the I2C bus via the driver's built-in mutex:
+
+- MPU6050 + SSD1306 on **I2C1** (PB6/PB7 @ 400 kHz).
+- W25Q32 on **SPI2** (PB13-PB15, CS = PB12).
+
+A foreground task reads the IMU and updates the OLED with live accel/gyro
+values. A background task appends samples to the W25Q32 once per second.
+
+### Pinout
+
+| Function | Pin | Notes |
+|----------|-----|-------|
+| I2C1 SCL | PB6 | shared by MPU6050 + SSD1306 |
+| I2C1 SDA | PB7 | shared by MPU6050 + SSD1306 |
+| SPI2 SCK | PB13 | |
+| SPI2 MISO | PB14 | |
+| SPI2 MOSI | PB15 | |
+| W25Q32 CS | PB12 | |
+
+I2C addresses: MPU6050 `0x68`, SSD1306 `0x3C`. The driver's mutex
+(`#ifdef STM32_USE_FREERTOS`) prevents concurrent transactions on the bus.
+
+### Wiring
+
+Connect both the MPU6050 and SSD1306 to the same I2C1 lines (parallel —
+they have different addresses, so there's no conflict). Connect the W25Q32
+to SPI2 as in the `w25q32-flash-test` template.
+
+### What `main.cpp` does
+
+1. `__initialize_hardware()` enables GPIOA/B/D, I2C1, USART2, SPI2, DMA1 clocks.
+2. Globals: GPIO pins, I2C bus, SPI bus, MPU, OLED, W25Q32 instances.
+3. `taskDisplay`: reads MPU samples, renders accel/gyro values on the OLED,
+   updates once per ~100 ms.
+4. `taskLogger`: appends samples to the W25Q32 once per second, advancing the
+   address pointer; when a sector boundary is reached, erases the next sector.
+
+### Expected behaviour
+
+- OLED shows live MPU data: tilt the board, the displayed values change.
+- After several seconds, the W25Q32 contains a contiguous log of binary
+  samples (no visible feedback unless you dump the flash separately).
+
+### How to verify
+
+1. Power the board.
+2. Within ~200 ms, OLED lights up with live values.
+3. Tilt the board — values respond immediately.
+4. Optionally, halt the MCU in a debugger and call `g_flash.read(0, buf)`
+   to inspect the log.
+
+### When to extend
+
+This template is the closest thing to a real "data acquisition" project in
+the SDK. Common extensions:
+
+- Add UART logging by enabling `Uart<>` and printing samples (the I2C bus
+  is already shared safely; UART is independent).
+- Add wear-leveling logic on top of `IExternalFlash` to cycle through
+  multiple sectors instead of overwriting one.
+- Add FFT or filtering between MPU read and OLED display.
