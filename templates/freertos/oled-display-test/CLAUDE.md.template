@@ -1,0 +1,93 @@
+# @PROJECT_NAME@
+
+STM32 @STM32_CHIP@ project on stm32-sdk @SDK_VERSION@ — SSD1306 128×64 OLED
+display driven over I2C1 with a static title and a live uptime counter.
+
+## SDK rules (must follow)
+
+- CMSIS only, HAL/LL forbidden.
+- C++20 (gnu++20), C11 (gnu11).
+- MMIO access through `driver::reg::set/clear/write/read/get/modify` only.
+- No raw pointers to peripherals — references (`GPIO_TypeDef&`).
+- Configs without defaults — every field must be explicit.
+- `GpioConfig` is an aggregate; wrap in `gpio({...})` for compile-time validation.
+- Trailing comma after the last designated initializer to keep clang-format multi-line.
+
+## Build / flash
+
+```bash
+stmtool build --native
+stmtool flash
+stmtool sdk update          # if [sdk] version = "develop"
+```
+
+## SDK reference
+
+- Documentation: <https://khosta77.github.io/stm32-sdk/>
+- SSD1306: <https://khosta77.github.io/stm32-sdk/sensors/ssd1306/>
+
+## This template
+
+Initializes an SSD1306 module on I2C1, draws a title and a counter, flushes
+the framebuffer once per second.
+
+### Pinout
+
+| Function | Pin | Notes |
+|----------|-----|-------|
+| I2C1 SCL | PB6 | AF4, open-drain, pull-up |
+| I2C1 SDA | PB7 | AF4, open-drain, pull-up |
+
+I2C clock: 400 kHz. SSD1306 address: `0x3C` (7-bit; 8-bit write `0x78`).
+
+### Connect the OLED
+
+| OLED pin | STM32 pin |
+|----------|-----------|
+| VCC | 3.3 V (some modules accept 5 V — check the silkscreen) |
+| GND | GND |
+| SCL | PB6 |
+| SDA | PB7 |
+
+If the display is at `0x3D` instead of `0x3C`, change `addr = 0x3D` in the
+`Ssd1306::Config`. The
+[`bare-metal/i2c-scan`](https://github.com/khosta77/stm32-sdk/tree/develop/templates/bare-metal/i2c-scan)
+template can confirm the actual address.
+
+### What `main.cpp` does
+
+1. In `__initialize_hardware()`: enable GPIOB and I2C1 clocks.
+2. In `taskDisplay`: wait 200 ms for the panel to stabilize, call
+   `g_oled.init()`.
+3. Loop: clear framebuffer, draw three header lines and a `uptime: Ns`
+   counter, call `flush()`. Wait 1000 ms.
+
+The full framebuffer is 1024 bytes; `flush()` over 400 kHz I2C takes ~25 ms.
+
+### Expected screen output
+
+```
+STM32 SDK
+SSD1306 128x64
+I2C @ 400 kHz
+
+
+uptime: 12s
+```
+
+The bottom counter increments by one per second.
+
+### How to verify
+
+1. Flash the board.
+2. Within ~200 ms after power-up, the display should light up.
+3. The title text is static; only the `uptime:` line changes.
+4. If the screen stays dark:
+   - Run `bare-metal/i2c-scan` and confirm the SSD1306 address.
+   - Check VCC voltage — some modules require 5 V despite labeling.
+   - Verify pull-ups on SCL/SDA (most modules include them).
+
+### When to extend
+
+Add `g_oled.setPixel(x, y, on)` calls to draw graphics. For larger fonts or
+anti-aliasing, render off-line and write into the framebuffer via `setPixel`.
