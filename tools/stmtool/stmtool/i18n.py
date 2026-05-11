@@ -151,6 +151,18 @@ _STRINGS: dict[str, dict[str, str]] = {
         "en": "Cleaning build directory...",
         "ru": "Очистка директории сборки...",
     },
+    "create_claude_help": {
+        "en": "Also generate a CLAUDE.md tailored to the template",
+        "ru": "Сгенерировать CLAUDE.md, адаптированный под шаблон",
+    },
+    "create_claude_added": {
+        "en": "CLAUDE.md generated from the template",
+        "ru": "CLAUDE.md создан из шаблона",
+    },
+    "create_claude_missing": {
+        "en": "Warning: template '{template}' has no CLAUDE.md.template — skipping",
+        "ru": "Предупреждение: у шаблона '{template}' нет CLAUDE.md.template — пропускаем",
+    },
 }
 
 

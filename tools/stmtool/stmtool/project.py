@@ -148,7 +148,14 @@ def discover_template(sdk_root: Path, template_name: str) -> Path:
     )
 
 
-def create_project(name: str, chip: str, template_name: str) -> Path:
+def create_project(
+    name: str,
+    chip: str,
+    template_name: str,
+    *,
+    with_claude: bool = False,
+    sdk_version: str = "develop",
+) -> Path:
     sdk_root = resolve_sdk_root()
     tpl_dir = discover_template(sdk_root, template_name)
 
@@ -166,11 +173,14 @@ def create_project(name: str, chip: str, template_name: str) -> Path:
     for item in sorted(tpl_dir.iterdir()):
         if item.name == "template.toml":
             continue
+        if item.name == "CLAUDE.md.template" and not with_claude:
+            continue
 
         if item.suffix == ".template":
             content = item.read_text()
             content = content.replace("@PROJECT_NAME@", name)
             content = content.replace("@STM32_CHIP@", chip)
+            content = content.replace("@SDK_VERSION@", sdk_version)
             dest = target / item.stem
             dest.write_text(content)
         elif item.name.endswith(".cpp") or item.name.endswith(".c") or item.name.endswith(".h"):
