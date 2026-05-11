@@ -57,7 +57,7 @@ stmtool project templates
 Чтобы начать с FreeRTOS-примера (например, MPU6050 + UART DMA):
 
 ```bash
-stmtool project create imu --chip STM32F407VG --template freertos-mpu6050-uart
+stmtool project create imu --chip STM32F407VG --template mpu6050-uart
 ```
 
 Чтобы также сгенерировать `CLAUDE.md` под этот конкретный шаблон (распиновка,
@@ -65,7 +65,7 @@ stmtool project create imu --chip STM32F407VG --template freertos-mpu6050-uart
 
 ```bash
 stmtool project create imu --chip STM32F407VG \
-  --template freertos-mpu6050-uart --with-claude
+  --template mpu6050-uart --with-claude
 ```
 
 ## Сборка

@@ -59,7 +59,7 @@ stmtool project templates
 To start from a FreeRTOS sample (e.g. MPU6050 + UART DMA):
 
 ```bash
-stmtool project create imu --chip STM32F407VG --template freertos-mpu6050-uart
+stmtool project create imu --chip STM32F407VG --template mpu6050-uart
 ```
 
 To also generate a `CLAUDE.md` tailored to the template (with pinout, expected
@@ -67,7 +67,7 @@ serial output, verification steps for that specific scenario):
 
 ```bash
 stmtool project create imu --chip STM32F407VG \
-  --template freertos-mpu6050-uart --with-claude
+  --template mpu6050-uart --with-claude
 ```
 
 ## Build

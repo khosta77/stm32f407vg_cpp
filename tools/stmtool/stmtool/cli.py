@@ -26,11 +26,21 @@ def project_create(
     name: str = typer.Argument(..., help=t("project_name_help")),
     chip: str = typer.Option(..., "--chip", help=t("chip_help"), autocompletion=complete_chip),
     template: str = typer.Option("blink", "--template", help=t("template_help"), autocompletion=complete_template),
+    with_claude: bool = typer.Option(
+        False, "--with-claude", help=t("create_claude_help")
+    ),
 ) -> None:
     try:
         with console.status(t("initializing_git")):
-            path = create_project(name, chip, template)
+            path = create_project(name, chip, template, with_claude=with_claude)
         console.print(f"[bold green]{t('project_created', name=name, path=path)}[/bold green]")
+        if with_claude:
+            if (path / "CLAUDE.md").exists():
+                console.print(f"[green]{t('create_claude_added')}[/green]")
+            else:
+                console.print(
+                    f"[yellow]{t('create_claude_missing', template=template)}[/yellow]"
+                )
     except (RuntimeError, ValueError, FileExistsError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(code=1)
