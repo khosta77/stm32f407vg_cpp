@@ -1,34 +1,71 @@
 # stm32-sdk
 
-Bare-metal C++17 SDK for STM32 microcontrollers. CMSIS only, no HAL/LL.
+Bare-metal C++20 SDK for STM32 microcontrollers with optional FreeRTOS support.
+CMSIS only, no HAL/LL. Drivers, sensors, and project templates are designed for
+deterministic startup, explicit configuration, and predictable footprint.
 
 ## Quick Start
 
+Preferred installation (uses pipx, pins to the latest released tag, configures
+shell completion automatically):
+
+```bash
+./install.sh
+```
+
+Alternatively, from a working checkout:
+
 ```bash
 pip install ./tools/stmtool
+```
+
+Create and flash your first project:
+
+```bash
 stmtool project create my-blink --chip STM32F407VG
 cd my-blink
 stmtool build --native
 stmtool flash
 ```
 
+## Documentation
+
+The full reference is published on GitHub Pages:
+<https://khosta77.github.io/stm32-sdk/> — available in **English** (default) and
+**Русский**.
+
+Source lives under [`docs/`](docs/) and is built with MkDocs Material. To preview locally:
+
+```bash
+pip install -r tools/docs/requirements.txt
+mkdocs serve
+```
+
 ## Requirements
 
-- `arm-none-eabi-gcc` >= 12
-- `cmake` >= 3.20
+- `arm-none-eabi-gcc` >= 13
+- `cmake` >= 3.28 (needed for C++20 modules support)
 - `python` >= 3.10
 - `st-flash` (optional, for flashing via ST-Link)
+- `pipx` (recommended, for isolated `stmtool` installation)
 
 ## stmtool CLI
 
 | Command | Description |
 |---------|-------------|
-| `stmtool project create <name> --chip <chip>` | Create new project from template |
+| `stmtool project create <name> --chip <chip>` | Create new project from a template |
+| `stmtool project create <name> --chip <chip> --template <tpl>` | Pick a specific template |
+| `stmtool project create <name> ... --with-claude` | Also generate a `CLAUDE.md` tailored to the template |
+| `stmtool project templates` | List available templates |
 | `stmtool build` | Build project (Docker by default) |
 | `stmtool build --native` | Build locally without Docker |
 | `stmtool build --clean` | Clean build directory before building |
 | `stmtool flash` | Flash firmware via st-link |
+| `stmtool sdk update [--version <tag>]` | Update cached SDK to a release tag or `develop` |
+| `stmtool sdk list-versions` | List available SDK versions (git tags) |
+| `stmtool sdk path` | Print the resolved SDK root path |
 | `stmtool doctor` | Check development environment |
+| `stmtool completion <shell>` | Generate shell completion script |
 | `stmtool version` | Show stmtool version |
 
 ### Environment variables
@@ -37,6 +74,34 @@ stmtool flash
 |----------|-------------|
 | `STMSDK_PATH` | Path to SDK repository (auto-detected or cached at `~/.stmtool/stm32-sdk/`) |
 | `STMTOOL_LANG` | UI language: `en` (default), `ru` |
+
+## What's inside
+
+**Drivers** (`sdk/drivers/`):
+- GPIO, I2C, UART (interrupt and DMA TX), SPI, DMA stream wrapper, internal flash
+- All MMIO access goes through `driver::reg::set/clear/write/read/get/modify` helpers
+- Configs use designated initializers with compile-time validation (`gpio({...})`)
+
+**Sensors** (`sdk/sensors/`):
+- `sensor.mpu6050` — 6-axis IMU (I2C, accelerometer + gyroscope + temperature)
+- `sensor.ssd1306` — 128×64 OLED display (I2C, framebuffer + 5×7 font)
+- `sensor.w25q32` — 32 Mbit SPI flash (`IExternalFlash` interface)
+
+**FreeRTOS helpers** (`sdk/rtos/`):
+- `rtos::Task`, `rtos::Mutex`, `rtos::Semaphore` RAII wrappers
+- `heap_4` configuration, 16 KB heap by default
+
+## Templates
+
+| Template | What it demonstrates |
+|----------|---------------------|
+| `bare-metal/blink` | LED on PD12 via SysTick; minimal startup + linker scripts |
+| `bare-metal/i2c-scan` | I2C bus scanner with USART2 output (no FreeRTOS) |
+| `freertos/blink` | FreeRTOS task controlling LED |
+| `freertos/mpu6050-uart` | MPU6050 sampling at 10 Hz, USART2 TX via DMA |
+| `freertos/oled-display-test` | SSD1306 with uptime counter and static text |
+| `freertos/w25q32-flash-test` | W25Q32 round-trip: erase, page-program, read, verify |
+| `freertos/imu-flash-oled-demo` | Combined MPU + OLED + W25Q32 on one board |
 
 ## Supported chips
 
@@ -51,7 +116,29 @@ stmtool flash
 | STM32F439 | 192K | 64K | 512-2048K | STM32F439ZI |
 | STM32F446 | 128K | - | 256-512K | STM32F446RE |
 
-Flash size is determined from chip name (letter at position 11: B=128K, C=256K, E=512K, G=1024K, I=2048K).
+Flash size is determined from chip name (letter at position 11: B=128K, C=256K,
+E=512K, G=1024K, I=2048K).
+
+## Updating the SDK
+
+Each project pins the SDK version in `stmproject.toml`:
+
+```toml
+[sdk]
+version = "develop"   # tracks origin/develop, or set a tag like "0.1.2"
+```
+
+To update the SDK cache for the current project:
+
+```bash
+stmtool sdk update                       # use [sdk] version from stmproject.toml
+stmtool sdk update --version 0.1.2       # explicit tag
+stmtool sdk list-versions                # show available tags
+```
+
+When upgrading across versions, check
+<https://khosta77.github.io/stm32-sdk/migration/> for any source-side changes
+your project must make.
 
 ## Project structure
 
@@ -61,25 +148,36 @@ stm32-sdk/
     cmake/            CMake toolchain and family configs
     core/             Cortex-M runtime, newlib, linker scripts
     hal/stm32f4/      STM32F4 CMSIS headers, vectors, memory layout
-  templates/          Project templates (blink, etc.)
+    drivers/          GPIO, I2C, UART, SPI, DMA, flash drivers
+    sensors/          MPU6050, SSD1306, W25Q32 implementations
+    rtos/             FreeRTOS wrappers
+  templates/          Project templates
   tools/stmtool/      Python CLI tool
+  tools/docs/         MkDocs build dependencies
+  docs/               MkDocs source (en/ru via suffix mode)
   docker/             Build environment Dockerfiles
 ```
 
-Generated project:
+Generated project layout:
+
 ```
 my-project/
   src/main.cpp        Application code
   CMakeLists.txt      Build configuration
-  stmproject.toml     Project config (chip, flash tool, etc.)
+  stmproject.toml     Project config (chip, SDK pin, flash tool, etc.)
+  CLAUDE.md           Optional, when --with-claude is passed
   .gitignore
 ```
 
-SDK is resolved automatically by `stmtool build` (cached at `~/.stmtool/stm32-sdk/`).
+## Versioning and releases
+
+Tags follow SemVer (`vX.Y.Z`). The project is currently pre-1.0 — public APIs may
+still be refined. The single source of versioning is git tags (resolved via
+`setuptools-scm` for `stmtool`). Release notes live in `docs/release.md`.
 
 ## Adding a new chip family
 
-1. Create `sdk/cmake/families/stm32XX.cmake` with `stm32XX_get_chip_info` function
+1. Create `sdk/cmake/families/stm32XX.cmake` with a `stm32XX_get_chip_info` function
 2. Add CMSIS device headers to `sdk/hal/stm32XX/include/cmsis/`
 3. Create vector tables in `sdk/hal/stm32XX/src/cmsis/`
 4. Create `sdk/hal/stm32XX/ldscripts/mem.ld.in`
