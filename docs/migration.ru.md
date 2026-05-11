@@ -1,0 +1,113 @@
+# Заметки по апгрейду
+
+Эта страница перечисляет, что нужно изменить в коде вашего проекта при
+обновлении версии SDK. Проект ещё в pre-1.0 — публичные API могут уточняться
+между релизами. Фиксируйте конкретный тег в `stmproject.toml` (вместо
+`develop`) и обновляйтесь осознанно.
+
+## Рекомендованный workflow
+
+1. На отдельной ветке вашего проекта обновите `[sdk] version` до нового тега.
+2. `stmtool sdk update --version <тег>`.
+3. Перепрогон форматтера: `clang-format -i src/**/*.cpp src/**/*.cppm`.
+4. `stmtool build --native --clean`. Разбирайте ошибки компиляции по одной.
+5. Прошейте на железо и убедитесь, что ваш smoke-test проходит.
+6. Сливайте, когда всё зелёное.
+
+## Апгрейд с v0.1.2
+
+### `GpioConfig` теперь aggregate, валидация через `gpio({...})`
+
+Позиционный `consteval GpioConfig(...)` конструктор удалён, заменён на
+обычный aggregate + свободный `consteval gpio()`-валидатор. Новая форма
+обязательна во всех call-сайтах.
+
+**Было (v0.1.2):**
+
+```cpp
+GpioPin led{*GPIOD, GpioConfig{12, PinMode::Output, PullMode::None,
+                               OutputSpeed::Low, OutputType::PushPull}};
+```
+
+**Стало (latest):**
+
+```cpp
+GpioPin led{*GPIOD, gpio({.pin = 12, .mode = PinMode::Output,
+                          .pull = PullMode::None, .speed = OutputSpeed::Low,
+                          .type = OutputType::PushPull})};
+```
+
+Trailing comma после последнего designated-инициализатора удерживает
+clang-format от схлопывания конфига обратно в одну строку.
+
+### GPIO теперь per-pin
+
+Интерфейс переработан с per-port (`IGpio`) на per-pin (`IGpioPin`). Каждый
+`GpioPin` владеет одним сконфигурированным пином; то, что раньше было
+методами уровня порта, теперь у отдельных пинов.
+
+**Было:**
+
+```cpp
+Gpio g_porta{*GPIOA};
+g_porta.write(5, true);
+```
+
+**Стало:**
+
+```cpp
+GpioPin g_pa5{*GPIOA, gpio({.pin = 5, .mode = PinMode::Output, ...})};
+g_pa5.write(true);
+```
+
+### `Uart<>` получил третий template-параметр (backward compatible)
+
+`Uart<RxBufSize, TxBufSize, Mode>`, где `Mode` по умолчанию
+`UartMode::Interrupt`. Существующий код `Uart<256, 256>` продолжает работать
+без правок. DMA TX — opt-in:
+
+```cpp
+Uart<512, 256, UartMode::Dma> g_uart2{ ... };
+```
+
+## Новые доступные модули
+
+После апгрейда становятся доступны (без дополнительной настройки):
+
+- `driver.stm32f4.dma` — `DmaStream` RAII-обёртка + таблица `dmaMap`.
+- `sensor.display` — интерфейс `IDisplay`.
+- `sensor.ssd1306` — драйвер SSD1306 OLED.
+- `sensor.external_flash` — интерфейс `IExternalFlash`.
+- `sensor.w25q32` — драйвер SPI flash W25Q32.
+
+## Изменения в clang-format
+
+В `.clang-format` добавлены:
+
+- `BinPackArguments: false`, `BinPackParameters: false`
+- `AllowAllArgumentsOnNextLine: false`, `AllowAllParametersOfDeclarationOnNextLine: false`
+- `AlignAfterOpenBracket: BlockIndent`
+- `Cpp11BracedListStyle: false`
+
+При `clang-format -i` после апгрейда — ожидайте шумные diff'ы на call-сайтах
+с aggregate-конфигами. Используйте trailing comma после последнего
+designated-инициализатора, чтобы детерминированно сохранить multi-line.
+
+## Поведение I2C
+
+Если вы читаете multi-byte буферы по I2C на 400 кГц — путь чтения теперь
+строго по спецификации RM0090 §27.3.3. Раньше драйвер мог читать мусор в
+последних 1-2 байтах `read()` / `readReg()` на высокой тактовой; сенсоры с
+короткими блоками (например, 14-байтный блок MPU6050) страдали сильнее.
+Правок в коде не требуется — фикс прозрачен.
+
+`I2c::probe()` теперь гонит `ADDR` против `AF` для быстрого детектирования
+NACK. Сканирование шины, занимавшее ~58 с, теперь укладывается в ~200 мс.
+
+## Защита проекта на будущее
+
+- Фиксируйте `[sdk] version` на тег в `main`/`master`; `develop` используйте
+  только на экспериментальных ветках.
+- Если проект сильно зависит от SDK — настройте CI на сборку против
+  нескольких тегов одновременно.
+- Подпишитесь на GitHub Releases, чтобы видеть новые теги.

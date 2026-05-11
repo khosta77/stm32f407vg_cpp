@@ -1,0 +1,84 @@
+site_name: stm32-sdk
+site_description: Bare-metal C++20 SDK for STM32 microcontrollers
+site_url: https://khosta77.github.io/stm32-sdk/
+repo_url: https://github.com/khosta77/stm32-sdk
+repo_name: khosta77/stm32-sdk
+edit_uri: edit/develop/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ru
+          name: Русский
+          build: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Quick start: quickstart.md
+  - stmtool: stmtool.md
+  - Modules:
+      - Drivers: modules/drivers.md
+      - Sensors: modules/sensors.md
+      - FreeRTOS: modules/freertos.md
+  - Chips:
+      - Overview: chips/index.md
+      - Datasheets: chips/datasheets.md
+      - STM32F4: chips/stm32f4.md
+  - Sensors:
+      - Overview: sensors/index.md
+      - MPU6050: sensors/mpu6050.md
+      - SSD1306: sensors/ssd1306.md
+      - W25Q32: sensors/w25q32.md
+  - Release: release.md
+  - Upgrade notes: migration.md
